@@ -14,7 +14,8 @@ concurrency:
 
 env:
   GO_VERSION: '1.25'
-  NODE_VERSION: '18'
+  # Tailwind v4's @tailwindcss/oxide native binding requires Node >= 20.
+  NODE_VERSION: '20'
   # Pure-Go build: Wails CGO (webview) is exercised by build.yml on tag
   # releases. CI uses CGO_ENABLED=0 for fast, dependency-free feedback
   # across all three OSes without GTK/webkit dev packages.
