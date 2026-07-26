@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+# Cancel in-progress runs for the same ref when a new commit is pushed,
+# so we don't waste CI minutes on superseded PR commits.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: '1.25'
+  # Tailwind v4's @tailwindcss/oxide native binding requires Node >= 20.
+  NODE_VERSION: '20'
+  # Pure-Go build: Wails CGO (webview) is exercised by build.yml on tag
+  # releases. CI uses CGO_ENABLED=0 for fast, dependency-free feedback
+  # across all three OSes without GTK/webkit dev packages.
+  CGO_ENABLED: '0'
+
+jobs:
+  # Lint runs once on Linux: gofmt + go vet are platform-independent and
+  # running them 3x would just burn CI minutes.
+  lint:
+    name: fmt + vet
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fforge
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: fforge/frontend/package-lock.json
+
+      # main.go has `//go:embed all:frontend/dist`, so dist/ must exist
+      # before go vet (which validates embed directives).
+      - name: Build frontend
+        working-directory: fforge/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Check formatting
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "::error::Files need gofmt:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Go vet
+        run: go vet ./...
+
+  # Tests + build run on all three OSes so platform-specific code paths
+  # get real regression coverage instead of only cross-compiling.
+  test:
+    name: test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: fforge
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: fforge/frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: fforge/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build
+        run: go build ./...
+
+      - name: Tests
+        run: go test ./...
+
+  # commit-lint: enforce commit message + identity rules on every PR commit.
+  # Reuses the code-hooks repo's reusable workflow as the single source of
+  # truth (commit-msg script + allowed-identities). code-hooks is public, so
+  # the runner clones it over unauthenticated HTTPS -- NO secrets, NO deploy
+  # key, NO PAT needed. Squash merges generated on GitHub bypass local hooks;
+  # this is the CI backstop.
+  # Required status check name for branch protection: `commit-lint / commit-lint`.
+  commit-lint:
+    name: commit-lint
+    uses: mose-x/code-hooks/.github/workflows/commit-lint.yml@main
+    if: github.event_name == 'pull_request'
