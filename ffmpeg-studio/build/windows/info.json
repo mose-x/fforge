@@ -1,0 +1,15 @@
+{
+  "fixed": {
+    "file_version": "1.0.0.0"
+  },
+  "info": {
+    "0000": {
+      "ProductVersion": "1.0.0",
+      "CompanyName": "FFmpeg Studio",
+      "FileDescription": "FFmpeg 工作室 / FFmpeg Studio",
+      "LegalCopyright": "Copyright © 2026 FFmpeg Studio",
+      "ProductName": "FFmpeg Studio",
+      "Comments": "A cross-platform FFmpeg desktop GUI built with Wails + React."
+    }
+  }
+}

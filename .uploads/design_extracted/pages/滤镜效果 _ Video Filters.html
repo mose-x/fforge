@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="zh" class="dark" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>滤镜效果 / Video Filters</title>
+    <style id="theme-vars">
+/* ============================================================
+   FFmpeg Studio — Design Style (dark-primary dual-mode)
+   Brand prefix: ffs  |  Primary hue: broadcast amber
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+/* ---------- Design tokens (dark = default, lives in :root) ---------- */
+:root {
+  /* surfaces (charcoal, slightly cool) */
+  --ffs-background: #121317;
+  --ffs-foreground: #e8e9ee;
+  --ffs-card: #1a1c22;
+  --ffs-card-foreground: #e8e9ee;
+  --ffs-popover: #20222a;
+  --ffs-popover-foreground: #e8e9ee;
+
+  /* primary = broadcast amber */
+  --ffs-primary: #e6a23c;
+  --ffs-primary-foreground: #1c1406;
+  --ffs-primary-soft: rgba(230, 162, 60, 0.14);
+  --ffs-primary-ring: rgba(230, 162, 60, 0.42);
+
+  /* neutrals */
+  --ffs-muted: #252831;
+  --ffs-muted-foreground: #9aa0ad;
+  --ffs-subtle: #2f333d;
+  --ffs-border: #2a2d36;
+  --ffs-border-strong: #3a3e49;
+  --ffs-input: #262932;
+  --ffs-ring: #e6a23c;
+
+  /* semantic states */
+  --ffs-state-success: #4cb782;
+  --ffs-state-warning: #e6a23c;
+  --ffs-state-error: #ef6b6b;
+  --ffs-state-info: #5aa9e6;
+
+  /* console / terminal surface (deeper than background) */
+  --ffs-console: #0d0e12;
+  --ffs-console-border: #23262f;
+  --ffs-console-text: #d6d9e0;
+
+  /* radius scale */
+  --ffs-radius-sm: 6px;
+  --ffs-radius-md: 10px;
+  --ffs-radius-lg: 14px;
+  --ffs-radius-xl: 18px;
+
+  /* typography */
+  --ffs-font-display: "Space Grotesk", system-ui, sans-serif;
+  --ffs-font-body: "Manrope", system-ui, sans-serif;
+  --ffs-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* shadows (subtle, surface layering first) */
+  --ffs-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ffs-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+/* ---------- Light mode override ---------- */
+.light {
+  --ffs-background: #f7f6f3;
+  --ffs-foreground: #1c1d22;
+  --ffs-card: #ffffff;
+  --ffs-card-foreground: #1c1d22;
+  --ffs-popover: #ffffff;
+  --ffs-popover-foreground: #1c1d22;
+
+  --ffs-primary: #b8741a;
+  --ffs-primary-foreground: #ffffff;
+  --ffs-primary-soft: rgba(184, 116, 26, 0.12);
+  --ffs-primary-ring: rgba(184, 116, 26, 0.35);
+
+  --ffs-muted: #eeece7;
+  --ffs-muted-foreground: #6b7079;
+  --ffs-subtle: #e4e1da;
+  --ffs-border: #e2dfd8;
+  --ffs-border-strong: #d0ccc3;
+  --ffs-input: #ece9e2;
+  --ffs-ring: #b8741a;
+
+  --ffs-state-success: #2f9e6b;
+  --ffs-state-warning: #b8741a;
+  --ffs-state-error: #d94c4c;
+  --ffs-state-info: #2f7fc4;
+
+  --ffs-console: #141519;
+  --ffs-console-border: #2a2d36;
+  --ffs-console-text: #d6d9e0;
+
+  --ffs-shadow-sm: 0 1px 2px rgba(28, 29, 34, 0.05);
+  --ffs-shadow-md: 0 6px 18px rgba(28, 29, 34, 0.10);
+}
+
+/* ---------- Base typography ---------- */
+html {
+  font-family: var(--ffs-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* command-line syntax highlight helpers (used inside the console) */
+.ffs-tok-cmd { color: var(--ffs-primary); font-weight: 600; }
+.ffs-tok-flag { color: #79b8ff; }
+.ffs-tok-file { color: #8fd3a8; }
+.ffs-tok-val { color: var(--ffs-console-text); }
+.ffs-tok-str { color: #e6c07b; }
+.ffs-tok-dim { color: #6b7079; }
+.light .ffs-tok-flag { color: #2f7fc4; }
+.light .ffs-tok-file { color: #2f9e6b; }
+.light .ffs-tok-str { color: #a86a1a; }
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-background: var(--ffs-background);
+    --color-foreground: var(--ffs-foreground);
+    --color-card: var(--ffs-card);
+    --color-card-foreground: var(--ffs-card-foreground);
+    --color-popover: var(--ffs-popover);
+    --color-popover-foreground: var(--ffs-popover-foreground);
+    --color-primary: var(--ffs-primary);
+    --color-primary-foreground: var(--ffs-primary-foreground);
+    --color-muted: var(--ffs-muted);
+    --color-muted-foreground: var(--ffs-muted-foreground);
+    --color-border: var(--ffs-border);
+    --color-input: var(--ffs-input);
+    --color-ring: var(--ffs-ring);
+    --radius-sm: var(--ffs-radius-sm);
+    --radius-md: var(--ffs-radius-md);
+    --radius-lg: var(--ffs-radius-lg);
+    --radius-xl: var(--ffs-radius-xl);
+  }
+  @layer base {
+    body { background: var(--ffs-background); color: var(--ffs-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style id="semantic-token-fallback">
+      .bg-background { background-color: var(--ffs-background); }
+      .text-background { color: var(--ffs-background); }
+      .border-background { border-color: var(--ffs-background); }
+      .ring-background { --tw-ring-color: var(--ffs-background); }
+      .bg-foreground { background-color: var(--ffs-foreground); }
+      .text-foreground { color: var(--ffs-foreground); }
+      .border-foreground { border-color: var(--ffs-foreground); }
+      .ring-foreground { --tw-ring-color: var(--ffs-foreground); }
+      .bg-card { background-color: var(--ffs-card); }
+      .text-card { color: var(--ffs-card); }
+      .border-card { border-color: var(--ffs-card); }
+      .ring-card { --tw-ring-color: var(--ffs-card); }
+      .bg-card-foreground { background-color: var(--ffs-card-foreground); }
+      .text-card-foreground { color: var(--ffs-card-foreground); }
+      .border-card-foreground { border-color: var(--ffs-card-foreground); }
+      .ring-card-foreground { --tw-ring-color: var(--ffs-card-foreground); }
+      .bg-popover { background-color: var(--ffs-popover); }
+      .text-popover { color: var(--ffs-popover); }
+      .border-popover { border-color: var(--ffs-popover); }
+      .ring-popover { --tw-ring-color: var(--ffs-popover); }
+      .bg-popover-foreground { background-color: var(--ffs-popover-foreground); }
+      .text-popover-foreground { color: var(--ffs-popover-foreground); }
+      .border-popover-foreground { border-color: var(--ffs-popover-foreground); }
+      .ring-popover-foreground { --tw-ring-color: var(--ffs-popover-foreground); }
+      .bg-primary { background-color: var(--ffs-primary); }
+      .text-primary { color: var(--ffs-primary); }
+      .border-primary { border-color: var(--ffs-primary); }
+      .ring-primary { --tw-ring-color: var(--ffs-primary); }
+      .bg-primary-foreground { background-color: var(--ffs-primary-foreground); }
+      .text-primary-foreground { color: var(--ffs-primary-foreground); }
+      .border-primary-foreground { border-color: var(--ffs-primary-foreground); }
+      .ring-primary-foreground { --tw-ring-color: var(--ffs-primary-foreground); }
+      .bg-muted { background-color: var(--ffs-muted); }
+      .text-muted { color: var(--ffs-muted); }
+      .border-muted { border-color: var(--ffs-muted); }
+      .ring-muted { --tw-ring-color: var(--ffs-muted); }
+      .bg-muted-foreground { background-color: var(--ffs-muted-foreground); }
+      .text-muted-foreground { color: var(--ffs-muted-foreground); }
+      .border-muted-foreground { border-color: var(--ffs-muted-foreground); }
+      .ring-muted-foreground { --tw-ring-color: var(--ffs-muted-foreground); }
+      .bg-border { background-color: var(--ffs-border); }
+      .text-border { color: var(--ffs-border); }
+      .border-border { border-color: var(--ffs-border); }
+      .ring-border { --tw-ring-color: var(--ffs-border); }
+      .bg-input { background-color: var(--ffs-input); }
+      .text-input { color: var(--ffs-input); }
+      .border-input { border-color: var(--ffs-input); }
+      .ring-input { --tw-ring-color: var(--ffs-input); }
+      .bg-ring { background-color: var(--ffs-ring); }
+      .text-ring { color: var(--ffs-ring); }
+      .border-ring { border-color: var(--ffs-ring); }
+      .ring-ring { --tw-ring-color: var(--ffs-ring); }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+      .ffs-mono { font-family: var(--ffs-font-mono); }
+      .ffs-display { font-family: var(--ffs-font-display); }
+      .ffs-range { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 9999px; background: var(--ffs-subtle); outline: none; }
+      .ffs-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 9999px; background: var(--ffs-primary); cursor: pointer; border: 2px solid var(--ffs-card); }
+      .ffs-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 9999px; background: var(--ffs-primary); cursor: pointer; border: 2px solid var(--ffs-card); }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <main class="contents">
+      <!-- ============ ROOT APP-SHELL (only h-screen element) ============ -->
+      <div class="h-screen flex flex-col bg-background text-foreground overflow-hidden" data-viewport-mode="app-shell">
+
+        <!-- ============ TOP HEADER BAR (h-14) ============ -->
+        <header class="h-14 shrink-0 border-b border-border px-5 flex items-center justify-between bg-card">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+              <i data-lucide="terminal" class="w-[18px] h-[18px] text-primary-foreground"></i>
+            </div>
+            <div class="flex items-baseline gap-2 min-w-0">
+              <span class="ffs-display font-semibold text-[15px] truncate">FFmpeg 工作室</span>
+              <span class="text-muted-foreground text-xs shrink-0">/ FFmpeg Studio</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Language toggle pill -->
+            <div class="flex items-center rounded-md border border-border p-0.5 text-xs">
+              <button class="h-7 px-2.5 rounded bg-[var(--ffs-primary-soft)] text-primary font-medium">中</button>
+              <button class="h-7 px-2.5 rounded text-muted-foreground hover:text-foreground">EN</button>
+            </div>
+            <!-- Theme toggle -->
+            <button class="h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center" aria-label="切换主题 / Theme">
+              <i data-lucide="moon" class="w-[18px] h-[18px]"></i>
+            </button>
+            <!-- Settings -->
+            <button class="h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center" aria-label="设置 / Settings">
+              <i data-lucide="settings" class="w-[18px] h-[18px]"></i>
+            </button>
+            <!-- Help -->
+            <button class="h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center" aria-label="帮助 / Help">
+              <i data-lucide="circle-help" class="w-[18px] h-[18px]"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- ============ MIDDLE ROW (sidebar + main) ============ -->
+        <div class="flex-1 flex min-h-0 overflow-hidden">
+
+          <!-- ---------- Left sidebar ---------- -->
+          <aside class="w-64 shrink-0 border-r border-border flex flex-col bg-card">
+            <nav class="flex-1 overflow-y-auto no-scrollbar py-4 px-3">
+              <!-- Section 1: Media -->
+              <div class="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">媒体处理 / Media</div>
+              <div class="space-y-0.5 mb-4">
+                <a href="#" data-dom-id="nav-format-convert" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="arrow-right-left" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">格式转换</span>
+                    <span class="text-xs text-muted-foreground">Format Convert</span>
+                  </div>
+                </a>
+                <a href="#" data-dom-id="nav-cut-trim" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="scissors" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">视频剪辑</span>
+                    <span class="text-xs text-muted-foreground">Cut &amp; Trim</span>
+                  </div>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="layers" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">视频合并</span>
+                    <span class="text-xs text-muted-foreground">Merge</span>
+                  </div>
+                </a>
+                <a href="#" data-dom-id="nav-video-filters" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm bg-[var(--ffs-primary-soft)] text-primary border-l-2 border-primary">
+                  <i data-lucide="sliders-horizontal" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">滤镜效果</span>
+                    <span class="text-xs text-muted-foreground">Filters</span>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Section 2: Audio & Video -->
+              <div class="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">音视频 / Audio &amp; Video</div>
+              <div class="space-y-0.5 mb-4">
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="music" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">音频处理</span>
+                    <span class="text-xs text-muted-foreground">Audio</span>
+                  </div>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="captions" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">字幕处理</span>
+                    <span class="text-xs text-muted-foreground">Subtitles</span>
+                  </div>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="image" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">GIF 动图</span>
+                    <span class="text-xs text-muted-foreground">GIF</span>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Section 3: Advanced -->
+              <div class="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">高级 / Advanced</div>
+              <div class="space-y-0.5">
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="monitor-play" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">录屏录制</span>
+                    <span class="text-xs text-muted-foreground">Screen Record</span>
+                  </div>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="radio" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">流媒体</span>
+                    <span class="text-xs text-muted-foreground">Streaming</span>
+                  </div>
+                </a>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
+                  <i data-lucide="info" class="w-[18px] h-[18px] shrink-0"></i>
+                  <div class="flex-1 flex flex-col min-w-0">
+                    <span class="truncate">媒体信息</span>
+                    <span class="text-xs text-muted-foreground">Media Info</span>
+                  </div>
+                </a>
+              </div>
+            </nav>
+
+            <!-- Engine status -->
+            <div class="m-3 p-3 rounded-md border border-border" style="background-color: color-mix(in srgb, var(--ffs-muted) 40%, transparent);">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="w-2 h-2 rounded-full bg-[var(--ffs-state-success)]"></span>
+                <span class="ffs-mono text-xs">ffmpeg 6.1.1</span>
+              </div>
+              <div class="text-[11px] text-muted-foreground">就绪 / Ready</div>
+            </div>
+          </aside>
+
+          <!-- ---------- Main work area ---------- -->
+          <section class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Work area header -->
+            <div class="h-14 shrink-0 border-b border-border px-6 flex items-center justify-between">
+              <div class="flex flex-col min-w-0">
+                <span class="text-xs text-muted-foreground">媒体处理 / Media</span>
+                <span class="ffs-display font-semibold text-lg truncate">滤镜效果 / Video Filters</span>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <button class="h-9 px-4 rounded-md border border-border text-sm hover:bg-muted flex items-center gap-2">
+                  <i data-lucide="terminal" class="w-4 h-4"></i>
+                  <span>预览命令 / Preview</span>
+                </button>
+                <button class="h-9 px-4 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 flex items-center gap-2">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                  <span>应用滤镜 / Apply</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Scrollable content -->
+            <div class="flex-1 overflow-y-auto p-6" data-scroll-region="primary">
+              <div class="flex flex-col gap-4">
+
+                <!-- ===== Compact input/output row ===== -->
+                <div class="rounded-lg border border-border bg-card p-4">
+                  <div class="flex items-center gap-4 flex-wrap">
+                    <!-- Input -->
+                    <div class="flex items-center gap-2 min-w-0">
+                      <i data-lucide="file-video" class="w-4 h-4 text-primary shrink-0"></i>
+                      <span class="ffs-mono text-sm">input.mp4</span>
+                      <span class="text-xs text-muted-foreground">00:03:42 · 1920×1080</span>
+                    </div>
+                    <!-- Arrow -->
+                    <i data-lucide="arrow-right" class="w-4 h-4 text-muted-foreground shrink-0"></i>
+                    <!-- Output -->
+                    <div class="flex items-center gap-2">
+                      <input type="text" value="output.mp4" class="bg-input border border-border rounded-md h-8 px-2 text-sm ffs-mono w-40 focus:outline-none focus:ring-1 focus:ring-ring">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ===== Filter chain builder card ===== -->
+                <div class="rounded-lg border border-border bg-card p-4">
+                  <!-- Header -->
+                  <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4 text-primary shrink-0"></i>
+                    <span class="text-sm font-semibold">滤镜链构建 / Filter Chain Builder</span>
+                    <span class="ffs-mono text-[11px] text-muted-foreground">-vf "..."</span>
+                  </div>
+                  <!-- Ordered filter rows -->
+                  <div class="flex flex-col gap-2">
+                    <!-- Row 1: scale -->
+                    <div class="flex items-center gap-3 p-2.5 rounded-md border border-border bg-muted/30">
+                      <i data-lucide="grip-vertical" class="w-4 h-4 text-muted-foreground shrink-0"></i>
+                      <span class="w-5 h-5 rounded bg-[var(--ffs-primary-soft)] text-primary text-[11px] font-semibold flex items-center justify-center shrink-0 ffs-mono">1</span>
+                      <span class="ffs-mono text-sm font-medium text-primary shrink-0">scale</span>
+                      <input type="text" value="1280:720" class="bg-input border border-border rounded px-2 py-1 text-xs ffs-mono w-32 focus:outline-none focus:ring-1 focus:ring-ring">
+                      <span class="ffs-mono text-[11px] text-muted-foreground truncate">-vf scale=1280:720</span>
+                      <button class="ml-auto h-6 w-6 rounded hover:bg-muted text-muted-foreground flex items-center justify-center shrink-0" aria-label="移除 / Remove">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                    <!-- Row 2: crop -->
+                    <div class="flex items-center gap-3 p-2.5 rounded-md border border-border bg-muted/30">
+                      <i data-lucide="grip-vertical" class="w-4 h-4 text-muted-foreground shrink-0"></i>
+                      <span class="w-5 h-5 rounded bg-[var(--ffs-primary-soft)] text-primary text-[11px] font-semibold flex items-center justify-center shrink-0 ffs-mono">2</span>
+                      <span class="ffs-mono text-sm font-medium text-primary shrink-0">crop</span>
+                      <input type="text" value="1200:680" class="bg-input border border-border rounded px-2 py-1 text-xs ffs-mono w-32 focus:outline-none focus:ring-1 focus:ring-ring">
+                      <span class="ffs-mono text-[11px] text-muted-foreground truncate">-vf crop=1200:680</span>
+                      <button class="ml-auto h-6 w-6 rounded hover:bg-muted text-muted-foreground flex items-center justify-center shrink-0" aria-label="移除 / Remove">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                    <!-- Row 3: transpose -->
+                    <div class="flex items-center gap-3 p-2.5 rounded-md border border-border bg-muted/30">
+                      <i data-lucide="grip-vertical" class="w-4 h-4 text-muted-foreground shrink-0"></i>
+                      <span class="w-5 h-5 rounded bg-[var(--ffs-primary-soft)] text-primary text-[11px] font-semibold flex items-center justify-center shrink-0 ffs-mono">3</span>
+                      <span class="ffs-mono text-sm font-medium text-primary shrink-0">transpose</span>
+                      <input type="text" value="1" class="bg-input border border-border rounded px-2 py-1 text-xs ffs-mono w-32 focus:outline-none focus:ring-1 focus:ring-ring">
+                      <span class="ffs-mono text-[11px] text-muted-foreground truncate">-vf transpose=1</span>
+                      <button class="ml-auto h-6 w-6 rounded hover:bg-muted text-muted-foreground flex items-center justify-center shrink-0" aria-label="移除 / Remove">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ===== Add filter palette card ===== -->
+                <div class="rounded-lg border border-border bg-card p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="plus" class="w-4 h-4 text-primary shrink-0"></i>
+                    <span class="text-sm font-semibold">添加滤镜 / Add Filter</span>
+                    <span class="text-xs text-muted-foreground">点击添加到滤镜链 / Click to append</span>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">scale</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">crop</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">transpose</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">hflip</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">vflip</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">fps</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">pad</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">drawtext</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">eq</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">blur</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">sharpen</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">fade</button>
+                    <button class="h-8 px-3 rounded-full text-xs border border-border hover:border-primary hover:text-primary hover:bg-[var(--ffs-primary-soft)] transition-colors cursor-pointer ffs-mono">overlay</button>
+                  </div>
+                </div>
+
+                <!-- ===== Filter params reference ===== -->
+                <div class="rounded-lg border border-border bg-card p-4">
+                  <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="circle-help" class="w-4 h-4 text-primary shrink-0"></i>
+                    <span class="text-sm font-semibold">参数参考 / Params Reference</span>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                    <div class="flex items-center gap-3">
+                      <span class="ffs-mono text-primary">scale=W:H</span>
+                      <span class="text-muted-foreground">缩放 / Resize</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="ffs-mono text-primary">crop=W:H:X:Y</span>
+                      <span class="text-muted-foreground">裁剪 / Crop</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="ffs-mono text-primary">transpose=1</span>
+                      <span class="text-muted-foreground">旋转 90° / Rotate 90°</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <span class="ffs-mono text-primary">fps=N</span>
+                      <span class="text-muted-foreground">帧率 / Framerate</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ============ BOTTOM COMMAND CONSOLE (h-56) ============ -->
+        <div class="h-56 shrink-0 bg-[var(--ffs-console)] border-t border-[var(--ffs-console-border)] flex flex-col">
+          <!-- Console header -->
+          <div class="h-9 shrink-0 px-4 flex items-center justify-between border-b border-[var(--ffs-console-border)]">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-medium" style="color: var(--ffs-console-text);">FFmpeg 命令 / Command</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+              <span class="text-[11px] text-primary">实时预览 / live</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="h-7 w-7 rounded flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-[var(--ffs-console-border)]" style="color: var(--ffs-console-text);" aria-label="复制 / Copy">
+                <i data-lucide="copy" class="w-4 h-4"></i>
+              </button>
+              <button class="h-7 w-7 rounded flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-[var(--ffs-console-border)]" style="color: var(--ffs-console-text);" aria-label="命令说明 / Help">
+                <i data-lucide="circle-help" class="w-4 h-4"></i>
+              </button>
+              <button class="h-7 w-7 rounded flex items-center justify-center opacity-70 hover:opacity-100 hover:bg-[var(--ffs-console-border)]" style="color: var(--ffs-console-text);" aria-label="折叠 / Collapse">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Terminal body -->
+          <div class="flex-1 overflow-auto px-4 py-3">
+            <code class="ffs-mono text-[13px] leading-relaxed break-all" style="color: var(--ffs-console-text);">
+              <span class="ffs-tok-cmd">ffmpeg</span>
+              <span class="ffs-tok-flag">-i</span>
+              <span class="ffs-tok-file">input.mp4</span>
+              <span class="ffs-tok-flag">-vf</span>
+              <span class="ffs-tok-str">"scale=1280:720,crop=1200:680,transpose=1"</span>
+              <span class="ffs-tok-flag">-c:a</span>
+              <span class="ffs-tok-val">copy</span>
+              <span class="ffs-tok-file">output.mp4</span>
+            </code>
+          </div>
+
+          <!-- Command breakdown -->
+          <div class="shrink-0 px-4 py-2 border-t border-[var(--ffs-console-border)] max-h-[80px] overflow-y-auto no-scrollbar">
+            <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] ffs-mono" style="color: var(--ffs-console-text);">
+              <span class="ffs-tok-flag">-i input.mp4</span><span class="opacity-80">输入文件 / Input file</span>
+              <span class="ffs-tok-flag">-vf "..."</span><span class="opacity-80">滤镜图 按顺序应用 / Filter graph, applied in order</span>
+              <span class="ffs-tok-str">scale=1280:720</span><span class="opacity-80">缩放到 1280×720 / Resize</span>
+              <span class="ffs-tok-str">crop=1200:680</span><span class="opacity-80">裁剪 1200×680 / Crop</span>
+              <span class="ffs-tok-str">transpose=1</span><span class="opacity-80">顺时针旋转 90° / Rotate 90° CW</span>
+              <span class="ffs-tok-flag">-c:a copy</span><span class="opacity-80">音频流直接复制 不重编码 / Audio stream copy, no re-encode</span>
+              <span class="ffs-tok-file">output.mp4</span><span class="opacity-80">输出文件 / Output file</span>
+            </div>
+          </div>
+
+          <!-- Status bar -->
+          <div class="h-7 shrink-0 px-4 flex items-center justify-between border-t border-[var(--ffs-console-border)] text-[11px]">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--ffs-state-success)]"></span>
+              <span class="opacity-70" style="color: var(--ffs-console-text);">就绪 / Ready</span>
+            </div>
+            <span class="ffs-mono opacity-60" style="color: var(--ffs-console-text);">预计输出 ~12.1 MB · 用时 ~0m48s / est. ~0m48s</span>
+          </div>
+        </div>
+
+      </div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>
