@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ffmpeg-studio
+        working-directory: fforge
     steps:
       - uses: actions/checkout@v4
 
@@ -44,12 +44,12 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: ffmpeg-studio/frontend/package-lock.json
+          cache-dependency-path: fforge/frontend/package-lock.json
 
       # main.go has `//go:embed all:frontend/dist`, so dist/ must exist
       # before go vet (which validates embed directives).
       - name: Build frontend
-        working-directory: ffmpeg-studio/frontend
+        working-directory: fforge/frontend
         run: |
           npm ci
           npm run build
@@ -76,7 +76,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     defaults:
       run:
-        working-directory: ffmpeg-studio
+        working-directory: fforge
     steps:
       - uses: actions/checkout@v4
 
@@ -91,10 +91,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
-          cache-dependency-path: ffmpeg-studio/frontend/package-lock.json
+          cache-dependency-path: fforge/frontend/package-lock.json
 
       - name: Build frontend
-        working-directory: ffmpeg-studio/frontend
+        working-directory: fforge/frontend
         run: |
           npm ci
           npm run build
