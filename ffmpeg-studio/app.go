@@ -44,11 +44,11 @@ func (a *App) OnShutdown(_ context.Context) {}
 
 // EngineStatus describes the ffmpeg/ffprobe availability.
 type EngineStatus struct {
-	FFmpegAvailable bool   `json:"ffmpegAvailable"`
-	FFprobeAvailable bool  `json:"ffprobeAvailable"`
-	FFmpegPath      string `json:"ffmpegPath"`
-	FFprobePath     string `json:"ffprobePath"`
-	Version         string `json:"version"`
+	FFmpegAvailable  bool   `json:"ffmpegAvailable"`
+	FFprobeAvailable bool   `json:"ffprobeAvailable"`
+	FFmpegPath       string `json:"ffmpegPath"`
+	FFprobePath      string `json:"ffprobePath"`
+	Version          string `json:"version"`
 }
 
 // EngineStatus returns the current ffmpeg/ffprobe availability + version.
@@ -264,9 +264,9 @@ func (a *App) ProbeMedia(path string) (*MediaInfo, error) {
 
 // RunRequest is the payload used to start an ffmpeg job from the frontend.
 type RunRequest struct {
-	Args      []string `json:"args"`
-	OutputPath string  `json:"outputPath"`
-	Duration  float64  `json:"duration"` // seconds, for progress calc (0 = unknown)
+	Args       []string `json:"args"`
+	OutputPath string   `json:"outputPath"`
+	Duration   float64  `json:"duration"` // seconds, for progress calc (0 = unknown)
 }
 
 // ProgressEvent is emitted to the frontend during ffmpeg runs.
@@ -281,9 +281,9 @@ type ProgressEvent struct {
 }
 
 var (
-	timeRe    = regexp.MustCompile(`time=(\d+):(\d+):(\d+(?:\.\d+)?)`)
-	frameRe   = regexp.MustCompile(`frame=\s*(\d+)`)
-	speedRe   = regexp.MustCompile(`speed=\s*([0-9.]+x)`)
+	timeRe  = regexp.MustCompile(`time=(\d+):(\d+):(\d+(?:\.\d+)?)`)
+	frameRe = regexp.MustCompile(`frame=\s*(\d+)`)
+	speedRe = regexp.MustCompile(`speed=\s*([0-9.]+x)`)
 )
 
 // RunFFmpeg executes ffmpeg with the given args, streaming progress events.
