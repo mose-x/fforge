@@ -1,4 +1,4 @@
-APP := ffmpeg-studio
+APP := fforge
 WAILS := wails
 
 # On Linux, Wails defaults to the webkit2gtk-4.0 API, but recent distros

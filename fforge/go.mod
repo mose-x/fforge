@@ -1,4 +1,4 @@
-module ffmpeg-studio
+module fforge
 
 go 1.25.0
 

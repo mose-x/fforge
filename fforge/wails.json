@@ -1,18 +1,18 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "ffmpeg-studio",
-  "outputfilename": "ffmpeg-studio",
+  "name": "fforge",
+  "outputfilename": "fforge",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "FFmpeg Studio",
+    "name": "fforge",
     "email": ""
   },
   "info": {
-    "companyName": "FFmpeg Studio",
-    "productName": "FFmpeg 工作室 / FFmpeg Studio",
+    "companyName": "fforge",
+    "productName": "fforge",
     "productVersion": "1.0.0",
     "copyright": "Copyright © 2026",
     "comments": "A cross-platform FFmpeg desktop GUI built with Wails + React."
