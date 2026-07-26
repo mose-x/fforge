@@ -1,0 +1,303 @@
+/* Google Fonts must be imported before any other rules. */
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+/* ============================================================
+   FFmpeg Studio — Design Style (dark-primary dual-mode)
+   Brand prefix: ffs  |  Primary hue: broadcast amber
+   Ported 1:1 from the design draft.
+   ============================================================ */
+
+/* ---------- Design tokens (dark = default, lives in :root) ---------- */
+:root {
+  /* surfaces (charcoal, slightly cool) */
+  --ffs-background: #121317;
+  --ffs-foreground: #e8e9ee;
+  --ffs-card: #1a1c22;
+  --ffs-card-foreground: #e8e9ee;
+  --ffs-popover: #20222a;
+  --ffs-popover-foreground: #e8e9ee;
+
+  /* primary = broadcast amber */
+  --ffs-primary: #e6a23c;
+  --ffs-primary-foreground: #1c1406;
+  --ffs-primary-soft: rgba(230, 162, 60, 0.14);
+  --ffs-primary-ring: rgba(230, 162, 60, 0.42);
+
+  /* neutrals */
+  --ffs-muted: #252831;
+  --ffs-muted-foreground: #9aa0ad;
+  --ffs-subtle: #2f333d;
+  --ffs-border: #2a2d36;
+  --ffs-border-strong: #3a3e49;
+  --ffs-input: #262932;
+  --ffs-ring: #e6a23c;
+
+  /* semantic states */
+  --ffs-state-success: #4cb782;
+  --ffs-state-warning: #e6a23c;
+  --ffs-state-error: #ef6b6b;
+  --ffs-state-info: #5aa9e6;
+
+  /* console / terminal surface (deeper than background) */
+  --ffs-console: #0d0e12;
+  --ffs-console-border: #23262f;
+  --ffs-console-text: #d6d9e0;
+
+  /* radius scale */
+  --ffs-radius-sm: 6px;
+  --ffs-radius-md: 10px;
+  --ffs-radius-lg: 14px;
+  --ffs-radius-xl: 18px;
+
+  /* typography */
+  --ffs-font-display: "Space Grotesk", system-ui, sans-serif;
+  --ffs-font-body: "Manrope", system-ui, sans-serif;
+  --ffs-font-mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+
+  /* shadows (subtle, surface layering first) */
+  --ffs-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ffs-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.18);
+
+  /* sidebar width for responsive use */
+  --ffs-sidebar-w: 256px;
+  --ffs-header-h: 56px;
+  --ffs-console-h: 224px;
+}
+
+/* ---------- Light mode override ---------- */
+html.light {
+  --ffs-background: #f7f6f3;
+  --ffs-foreground: #1c1d22;
+  --ffs-card: #ffffff;
+  --ffs-card-foreground: #1c1d22;
+  --ffs-popover: #ffffff;
+  --ffs-popover-foreground: #1c1d22;
+
+  --ffs-primary: #b8741a;
+  --ffs-primary-foreground: #ffffff;
+  --ffs-primary-soft: rgba(184, 116, 26, 0.12);
+  --ffs-primary-ring: rgba(184, 116, 26, 0.35);
+
+  --ffs-muted: #eeece7;
+  --ffs-muted-foreground: #6b7079;
+  --ffs-subtle: #e4e1da;
+  --ffs-border: #e2dfd8;
+  --ffs-border-strong: #d0ccc3;
+  --ffs-input: #ece9e2;
+  --ffs-ring: #b8741a;
+
+  --ffs-state-success: #2f9e6b;
+  --ffs-state-warning: #b8741a;
+  --ffs-state-error: #d94c4c;
+  --ffs-state-info: #2f7fc4;
+
+  --ffs-console: #141519;
+  --ffs-console-border: #2a2d36;
+  --ffs-console-text: #d6d9e0;
+
+  --ffs-shadow-sm: 0 1px 2px rgba(28, 29, 34, 0.05);
+  --ffs-shadow-md: 0 6px 18px rgba(28, 29, 34, 0.1);
+}
+
+/* ---------- Tailwind v4 theme mapping ---------- */
+@theme inline {
+  --color-background: var(--ffs-background);
+  --color-foreground: var(--ffs-foreground);
+  --color-card: var(--ffs-card);
+  --color-card-foreground: var(--ffs-card-foreground);
+  --color-popover: var(--ffs-popover);
+  --color-popover-foreground: var(--ffs-popover-foreground);
+  --color-primary: var(--ffs-primary);
+  --color-primary-foreground: var(--ffs-primary-foreground);
+  --color-muted: var(--ffs-muted);
+  --color-muted-foreground: var(--ffs-muted-foreground);
+  --color-subtle: var(--ffs-subtle);
+  --color-border: var(--ffs-border);
+  --color-border-strong: var(--ffs-border-strong);
+  --color-input: var(--ffs-input);
+  --color-ring: var(--ffs-ring);
+  --color-state-success: var(--ffs-state-success);
+  --color-state-warning: var(--ffs-state-warning);
+  --color-state-error: var(--ffs-state-error);
+  --color-state-info: var(--ffs-state-info);
+  --color-console: var(--ffs-console);
+  --color-console-border: var(--ffs-console-border);
+  --color-console-text: var(--ffs-console-text);
+  --radius-sm: var(--ffs-radius-sm);
+  --radius-md: var(--ffs-radius-md);
+  --radius-lg: var(--ffs-radius-lg);
+  --radius-xl: var(--ffs-radius-xl);
+  --font-display: var(--ffs-font-display);
+  --font-sans: var(--ffs-font-body);
+  --font-mono: var(--ffs-font-mono);
+}
+
+/* ---------- Base typography ---------- */
+html {
+  font-family: var(--ffs-font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--ffs-background);
+  color: var(--ffs-foreground);
+}
+
+td,
+th {
+  word-break: break-all;
+}
+
+th {
+  white-space: nowrap;
+}
+
+/* command-line syntax highlight helpers (used inside the console) */
+.ffs-tok-cmd {
+  color: var(--ffs-primary);
+  font-weight: 600;
+}
+.ffs-tok-flag {
+  color: #79b8ff;
+}
+.ffs-tok-file {
+  color: #8fd3a8;
+}
+.ffs-tok-val {
+  color: var(--ffs-console-text);
+}
+.ffs-tok-str {
+  color: #e6c07b;
+}
+.ffs-tok-dim {
+  color: #6b7079;
+}
+html.light .ffs-tok-flag {
+  color: #2f7fc4;
+}
+html.light .ffs-tok-file {
+  color: #2f9e6b;
+}
+html.light .ffs-tok-str {
+  color: #a86a1a;
+}
+
+/* ---------- Utility helpers ---------- */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.ffs-mono {
+  font-family: var(--ffs-font-mono);
+}
+.ffs-display {
+  font-family: var(--ffs-font-display);
+}
+
+/* range slider styled like the design */
+.ffs-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--ffs-subtle);
+  outline: none;
+}
+.ffs-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--ffs-primary);
+  cursor: pointer;
+  border: 2px solid var(--ffs-card);
+}
+.ffs-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--ffs-primary);
+  cursor: pointer;
+  border: 2px solid var(--ffs-card);
+}
+
+/* primary-soft background helper */
+.bg-primary-soft {
+  background-color: var(--ffs-primary-soft);
+}
+.text-primary-soft {
+  color: var(--ffs-primary);
+}
+
+/* subtle scrollbars for the app (not hidden) */
+.app-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.app-scroll::-webkit-scrollbar-thumb {
+  background: var(--ffs-border-strong);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.app-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--ffs-muted-foreground);
+  background-clip: content-box;
+}
+.app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* drag region (frameless mac title bar) */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* fade-in for page transitions */
+@keyframes ffs-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-in {
+  animation: ffs-fade-in 0.18s ease-out;
+}
+
+/* progress bar shimmer */
+@keyframes ffs-progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 32px 0;
+  }
+}
+.progress-stripes {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.18) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0.18) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 32px 32px;
+  animation: ffs-progress-stripes 0.8s linear infinite;
+}
