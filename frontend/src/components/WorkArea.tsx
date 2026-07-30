@@ -46,11 +46,7 @@ export function WorkArea({
           <ButtonSecondary icon={<Play className="w-4 h-4" />} disabled={primary.disabled}>
             {previewLabel}
           </ButtonSecondary>
-          <ButtonPrimary
-            icon={primary.icon}
-            onClick={primary.onClick}
-            disabled={primary.disabled}
-          >
+          <ButtonPrimary icon={primary.icon} onClick={primary.onClick} disabled={primary.disabled}>
             {primary.label}
           </ButtonPrimary>
         </div>

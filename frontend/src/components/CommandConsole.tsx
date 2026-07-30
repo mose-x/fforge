@@ -24,15 +24,15 @@ export function CommandConsole({
   const statusLabel = running
     ? pick(t.running, lang)
     : progress?.status === "done"
-    ? pick(t.done, lang)
-    : pick(t.ready, lang);
+      ? pick(t.done, lang)
+      : pick(t.ready, lang);
   const statusColor = running
     ? "bg-state-warning"
     : progress?.status === "done"
-    ? "bg-state-success"
-    : progress?.status === "error"
-    ? "bg-state-error"
-    : "bg-state-success";
+      ? "bg-state-success"
+      : progress?.status === "error"
+        ? "bg-state-error"
+        : "bg-state-success";
 
   const handleCopy = async () => {
     const ok = await copyText(cmdString);
@@ -52,9 +52,7 @@ export function CommandConsole({
       {/* Console header */}
       <div className="h-9 shrink-0 px-4 flex items-center justify-between border-b border-console-border">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-console-text">
-            {pick(t.command, lang)}
-          </span>
+          <span className="text-xs font-medium text-console-text">{pick(t.command, lang)}</span>
           <span className="w-1.5 h-1.5 rounded-full bg-primary" />
           <span className="text-[11px] text-primary">{pick(t.live, lang)}</span>
         </div>
@@ -74,7 +72,7 @@ export function CommandConsole({
               toast(
                 lang === "zh"
                   ? "命令可复制后直接在终端运行 / 添加 -y 覆盖输出"
-                  : "Command can be run in a terminal / add -y to overwrite"
+                  : "Command can be run in a terminal / add -y to overwrite",
               )
             }
           >

@@ -11,14 +11,7 @@ import {
 } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { WorkArea, type PageAction } from "../components/WorkArea";
-import {
-  Card,
-  CardHeader,
-  Field,
-  Input,
-  ButtonSecondary,
-  Toggle,
-} from "../components/ui";
+import { Card, CardHeader, Field, Input, ButtonSecondary, Toggle } from "../components/ui";
 import {
   buildFilterCommand,
   FILTER_PALETTE,
@@ -139,7 +132,9 @@ export function VideoFiltersPage() {
           <div className="flex flex-col gap-2">
             {filters.length === 0 && (
               <div className="text-xs text-muted-foreground py-3 text-center">
-                {lang === "zh" ? "点击下方滤镜添加到链中" : "Click a filter below to add it to the chain"}
+                {lang === "zh"
+                  ? "点击下方滤镜添加到链中"
+                  : "Click a filter below to add it to the chain"}
               </div>
             )}
             {filters.map((f, idx) => (
@@ -177,7 +172,8 @@ export function VideoFiltersPage() {
                   className="bg-input border border-border rounded px-2 py-1 text-xs ffs-mono w-32 sm:w-40 focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <span className="ffs-mono text-[11px] text-muted-foreground truncate hidden sm:block">
-                  -vf {f.name}{f.args ? `=${f.args}` : ""}
+                  -vf {f.name}
+                  {f.args ? `=${f.args}` : ""}
                 </span>
                 <button
                   className="ml-auto h-6 w-6 rounded hover:bg-muted text-muted-foreground flex items-center justify-center shrink-0"
@@ -228,8 +224,8 @@ export function VideoFiltersPage() {
                       ? "音频流复制 / stream copy"
                       : "stream copy"
                     : lang === "zh"
-                    ? "重编码 AAC"
-                    : "re-encode AAC"
+                      ? "重编码 AAC"
+                      : "re-encode AAC"
                 }
               />
             </Field>
@@ -252,7 +248,11 @@ export function VideoFiltersPage() {
         </div>
 
         <div className="lg:hidden flex gap-2">
-          <ButtonSecondary icon={<Play className="w-4 h-4" />} disabled={!inputPath} className="flex-1">
+          <ButtonSecondary
+            icon={<Play className="w-4 h-4" />}
+            disabled={!inputPath}
+            className="flex-1"
+          >
             {pick(t.preview, lang)}
           </ButtonSecondary>
         </div>

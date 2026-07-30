@@ -16,9 +16,7 @@ export function Header() {
           <span className="ffs-display font-semibold text-[15px] truncate">
             {pick(t.appName, lang)}
           </span>
-          <span className="text-muted-foreground text-xs shrink-0">
-            / FFmpeg Studio
-          </span>
+          <span className="text-muted-foreground text-xs shrink-0">/ FFmpeg Studio</span>
         </div>
       </div>
 
@@ -77,7 +75,7 @@ export function Header() {
             toast(
               lang === "zh"
                 ? "FFmpeg Studio · 基于 Wails + React 构建"
-                : "FFmpeg Studio · built with Wails + React"
+                : "FFmpeg Studio · built with Wails + React",
             )
           }
         >

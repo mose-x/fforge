@@ -24,36 +24,32 @@ interface NavItem {
 const MEDIA: NavItem[] = [
   { id: "convert", icon: ArrowRightLeft, zh: "格式转换", en: "Format Convert" },
   { id: "cut", icon: Scissors, zh: "视频剪辑", en: "Cut & Trim" },
-  { id: "coming-soon", icon: Layers, zh: "视频合并", en: "Merge" },
+  { id: "merge", icon: Layers, zh: "视频合并", en: "Merge" },
   { id: "filters", icon: SlidersHorizontal, zh: "滤镜效果", en: "Filters" },
 ];
 
 const AV: NavItem[] = [
-  { id: "coming-soon", icon: Music, zh: "音频处理", en: "Audio" },
-  { id: "coming-soon", icon: Captions, zh: "字幕处理", en: "Subtitles" },
-  { id: "coming-soon", icon: ImageIcon, zh: "GIF 动图", en: "GIF" },
+  { id: "audio", icon: Music, zh: "音频处理", en: "Audio" },
+  { id: "subtitles", icon: Captions, zh: "字幕处理", en: "Subtitles" },
+  { id: "gif", icon: ImageIcon, zh: "GIF 动图", en: "GIF" },
 ];
 
 const ADV: NavItem[] = [
-  { id: "coming-soon", icon: MonitorPlay, zh: "录屏录制", en: "Screen Record" },
-  { id: "coming-soon", icon: Radio, zh: "流媒体", en: "Streaming" },
-  { id: "coming-soon", icon: Info, zh: "媒体信息", en: "Media Info" },
+  { id: "record", icon: MonitorPlay, zh: "录屏录制", en: "Screen Record" },
+  { id: "stream", icon: Radio, zh: "流媒体", en: "Streaming" },
+  { id: "info", icon: Info, zh: "媒体信息", en: "Media Info" },
 ];
 
 function NavRow({ item }: { item: NavItem }) {
-  const { page, setPage, lang, toast } = useStore();
-  const active = page === item.id && item.id !== "coming-soon";
+  const { page, setPage, lang } = useStore();
+  const active = page === item.id;
   const Icon = item.icon;
   return (
     <a
       href="#"
       onClick={(e) => {
         e.preventDefault();
-        if (item.id === "coming-soon") {
-          toast(pick(t.comingSoon, lang));
-        } else {
-          setPage(item.id);
-        }
+        setPage(item.id);
       }}
       className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm ${
         active
@@ -64,9 +60,7 @@ function NavRow({ item }: { item: NavItem }) {
       <Icon className="w-[18px] h-[18px] shrink-0" />
       <div className="flex-1 flex flex-col min-w-0">
         <span className="truncate">{lang === "zh" ? item.zh : item.en}</span>
-        <span className="text-xs text-muted-foreground">
-          {lang === "en" ? item.zh : item.en}
-        </span>
+        <span className="text-xs text-muted-foreground">{lang === "en" ? item.zh : item.en}</span>
       </div>
     </a>
   );
@@ -85,9 +79,7 @@ export function Sidebar() {
   const { engine, lang } = useStore();
   const installed = engine?.ffmpegAvailable;
   const version = engine?.version || "ffmpeg";
-  const statusText = installed
-    ? pick(t.ready, lang)
-    : pick(t.notInstalled, lang);
+  const statusText = installed ? pick(t.ready, lang) : pick(t.notInstalled, lang);
 
   return (
     <aside
@@ -124,9 +116,7 @@ export function Sidebar() {
       >
         <div className="flex items-center gap-2 mb-1">
           <span
-            className={`w-2 h-2 rounded-full ${
-              installed ? "bg-state-success" : "bg-state-error"
-            }`}
+            className={`w-2 h-2 rounded-full ${installed ? "bg-state-success" : "bg-state-error"}`}
           />
           <span className="ffs-mono text-xs">{version}</span>
         </div>
