@@ -3,7 +3,18 @@ import type { EngineStatus, MediaInfo, ProgressEvent } from "../lib/types";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import type { Lang } from "../lib/i18n";
 
-export type PageId = "convert" | "cut" | "filters" | "coming-soon";
+export type PageId =
+  | "convert"
+  | "cut"
+  | "filters"
+  | "merge"
+  | "audio"
+  | "subtitles"
+  | "gif"
+  | "record"
+  | "stream"
+  | "info"
+  | "coming-soon";
 export type Theme = "dark" | "light";
 
 interface Toast {
@@ -22,6 +33,7 @@ interface AppState {
   // engine + media
   engine: EngineStatus | null;
   inputInfo: MediaInfo | null;
+  inputFiles: MediaInfo[];
   progress: ProgressEvent | null;
   running: boolean;
   // actions
@@ -33,6 +45,10 @@ interface AppState {
   toggleConsole: () => void;
   setEngine: (e: EngineStatus) => void;
   setInputInfo: (m: MediaInfo | null) => void;
+  setInputFiles: (m: MediaInfo[]) => void;
+  addInputFile: (m: MediaInfo) => void;
+  removeInputFile: (idx: number) => void;
+  clearInputFiles: () => void;
   setProgress: (p: ProgressEvent | null) => void;
   setRunning: (r: boolean) => void;
   toast: (message: string, type?: Toast["type"]) => void;
@@ -49,6 +65,7 @@ export const useStore = create<AppState>((set, get) => ({
   toasts: [],
   engine: null,
   inputInfo: null,
+  inputFiles: [],
   progress: null,
   running: false,
 
@@ -78,8 +95,10 @@ export const useStore = create<AppState>((set, get) => ({
         } else if (ev.status === "error") {
           set({ running: false });
           get().toast(
-            "✗ " + (get().lang === "zh" ? "转换失败 / Failed" : "Failed") + (ev.message ? ": " + ev.message : ""),
-            "error"
+            "✗ " +
+              (get().lang === "zh" ? "转换失败 / Failed" : "Failed") +
+              (ev.message ? ": " + ev.message : ""),
+            "error",
           );
         }
       });
@@ -109,6 +128,10 @@ export const useStore = create<AppState>((set, get) => ({
   toggleConsole: () => set({ consoleCollapsed: !get().consoleCollapsed }),
   setEngine: (engine) => set({ engine }),
   setInputInfo: (inputInfo) => set({ inputInfo }),
+  setInputFiles: (inputFiles) => set({ inputFiles }),
+  addInputFile: (m) => set({ inputFiles: [...get().inputFiles, m] }),
+  removeInputFile: (idx) => set({ inputFiles: get().inputFiles.filter((_, i) => i !== idx) }),
+  clearInputFiles: () => set({ inputFiles: [] }),
   setProgress: (progress) => set({ progress }),
   setRunning: (running) => set({ running }),
 

@@ -139,7 +139,10 @@ export function Segmented<T extends string>({
         if (active) {
           if (activeStyle === "primary") {
             return (
-              <button key={o.value} className={`${base} bg-primary text-primary-foreground font-medium`}>
+              <button
+                key={o.value}
+                className={`${base} bg-primary text-primary-foreground font-medium`}
+              >
                 {o.label}
               </button>
             );

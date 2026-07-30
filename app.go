@@ -97,6 +97,42 @@ func (a *App) SelectMediaFile() (string, error) {
 	})
 }
 
+// SelectMediaFiles opens a multi-select file dialog and returns the chosen paths.
+// The result is always non-nil (empty slice if cancelled).
+func (a *App) SelectMediaFiles() ([]string, error) {
+	if a.ctx == nil {
+		return nil, fmt.Errorf("app not started")
+	}
+	opts := runtime.OpenDialogOptions{
+		Title:                "选择多个媒体文件 / Select Media Files",
+		Filters:              []runtime.FileFilter{mediaFilter(), {DisplayName: "All Files (*.*)", Pattern: "*.*"}},
+		CanCreateDirectories: true,
+	}
+	// Wails v2: multi-select is an option on OpenFileDialog (exposed via runtime).
+	result, err := runtime.OpenMultipleFilesDialog(a.ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if result == nil {
+		return []string{}, nil
+	}
+	return result, nil
+}
+
+// SelectSubtitleFile opens a file dialog for subtitle files (.srt/.ass/.vtt/.ssa).
+func (a *App) SelectSubtitleFile() (string, error) {
+	if a.ctx == nil {
+		return "", fmt.Errorf("app not started")
+	}
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "选择字幕文件 / Select Subtitle File",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Subtitles (*.srt;*.ass;*.vtt;*.ssa)", Pattern: "*.srt;*.ass;*.vtt;*.ssa"},
+			{DisplayName: "All Files (*.*)", Pattern: "*.*"},
+		},
+	})
+}
+
 // SelectOutputPath opens a save dialog and returns the chosen path.
 func (a *App) SelectOutputPath(defaultName string) (string, error) {
 	if a.ctx == nil {
@@ -446,4 +482,153 @@ func humanSize(b int64) string {
 // nowTimestamp is a small helper used for logging.
 func nowTimestamp() string {
 	return time.Now().Format("15:04:05.000")
+}
+
+// -----------------------------------------------------------------
+// Extended media info (all streams + chapters + raw JSON)
+// -----------------------------------------------------------------
+
+type ProbeStream struct {
+	Index      int            `json:"index"`
+	CodecType  string         `json:"codec_type"`
+	CodecName  string         `json:"codec_name"`
+	CodecLong  string         `json:"codec_long_name"`
+	Profile    string         `json:"profile"`
+	Width      int            `json:"width"`
+	Height     int            `json:"height"`
+	PixFmt     string         `json:"pix_fmt"`
+	Level      int            `json:"level"`
+	ColorRange string         `json:"color_range"`
+	ColorSpace string         `json:"color_space"`
+	ColorTrans string         `json:"color_transfer"`
+	ColorPrim  string         `json:"color_primaries"`
+	FieldOrder string         `json:"field_order"`
+	ChromaSub  string         `json:"chroma_subsampling"`
+	BitsPerRaw int            `json:"bits_per_raw_sample"`
+	BitsPerSt  int            `json:"bits_per_sample"`
+	SampleFmt  string         `json:"sample_fmt"`
+	SampleRate string         `json:"sample_rate"`
+	Channels   int            `json:"channels"`
+	ChLayout   string         `json:"channel_layout"`
+	Duration   string         `json:"duration"`
+	BitRate    string         `json:"bit_rate"`
+	StartTime  string         `json:"start_time"`
+	NbFrames   string         `json:"nb_frames"`
+	RFrameRate string         `json:"r_frame_rate"`
+	TimeBase   string         `json:"time_base"`
+	Tags       map[string]any `json:"tags"`
+	SideData   []any          `json:"side_data_list"`
+	// subtitle specific
+	Language string `json:"language,omitempty"`
+}
+
+type ProbeChapter struct {
+	ID        int            `json:"id"`
+	TimeBase  string         `json:"time_base"`
+	Start     int64          `json:"start"`
+	StartTime string         `json:"start_time"`
+	End       int64          `json:"end"`
+	EndTime   string         `json:"end_time"`
+	Tags      map[string]any `json:"tags"`
+}
+
+type ExtendedMediaInfo struct {
+	Path      string         `json:"path"`
+	Filename  string         `json:"filename"`
+	Format    map[string]any `json:"format"`
+	Streams   []ProbeStream  `json:"streams"`
+	Chapters  []ProbeChapter `json:"chapters"`
+	Tags      map[string]any `json:"tags"`
+	RawJSON   string         `json:"rawJson"`
+	SizeHuman string         `json:"sizeHuman"`
+}
+
+// ProbeMediaExtended runs ffprobe with full detail and returns structured + raw data.
+func (a *App) ProbeMediaExtended(path string) (*ExtendedMediaInfo, error) {
+	if a.probePath == "" {
+		return nil, fmt.Errorf("ffprobe 未找到 / ffprobe not found")
+	}
+	if path == "" {
+		return nil, fmt.Errorf("empty path")
+	}
+	if _, err := os.Stat(path); err != nil {
+		return nil, err
+	}
+	args := []string{
+		"-v", "error",
+		"-print_format", "json",
+		"-show_format",
+		"-show_streams",
+		"-show_chapters",
+		"-show_entries", "format_tags:stream_tags:stream_side_data_list:chapter_tags",
+		path,
+	}
+	out, err := exec.Command(a.probePath, args...).Output()
+	if err != nil {
+		return nil, fmt.Errorf("ffprobe 失败: %v", err)
+	}
+	raw := string(out)
+	var parsed struct {
+		Format   map[string]any `json:"format"`
+		Streams  []ProbeStream  `json:"streams"`
+		Chapters []ProbeChapter `json:"chapters"`
+	}
+	if err := json.Unmarshal(out, &parsed); err != nil {
+		return nil, fmt.Errorf("解析 ffprobe 输出失败: %v", err)
+	}
+	info := &ExtendedMediaInfo{
+		Path:     path,
+		Filename: filepath.Base(path),
+		Format:   parsed.Format,
+		Streams:  parsed.Streams,
+		Chapters: parsed.Chapters,
+		RawJSON:  raw,
+	}
+	if sz, err := os.Stat(path); err == nil {
+		info.SizeHuman = humanSize(sz.Size())
+	}
+	if parsed.Format != nil {
+		if tags, ok := parsed.Format["tags"].(map[string]any); ok {
+			info.Tags = tags
+		}
+	}
+	return info, nil
+}
+
+// -----------------------------------------------------------------
+// Input device enumeration (for screen/camera/audio capture)
+// -----------------------------------------------------------------
+
+type InputDevice struct {
+	Kind    string `json:"kind"` // "video" | "audio"
+	Name    string `json:"name"`
+	Desc    string `json:"desc"`
+	Default bool   `json:"default"`
+}
+
+// ListInputDevices enumerates likely capture devices by invoking ffmpeg/ffprobe
+// in the best-effort manner for the current platform. The list is cosmetic;
+// users can always type device names manually. Returns a (possibly empty) list.
+func (a *App) ListInputDevices() []InputDevice {
+	var list []InputDevice
+	switch runtime.Environment(a.ctx).Platform {
+	case "darwin":
+		// avfoundation: video devices are enumerated as 0:, 1:, ...
+		list = append(list, InputDevice{Kind: "video", Name: "0:", Desc: "FaceTime HD Camera (default)", Default: true})
+		list = append(list, InputDevice{Kind: "video", Name: "1:", Desc: "Screen recording (main display)"})
+		list = append(list, InputDevice{Kind: "audio", Name: ":0", Desc: "Built-in Microphone", Default: true})
+		list = append(list, InputDevice{Kind: "audio", Name: ":1", Desc: "Built-in Output"})
+	case "windows":
+		list = append(list, InputDevice{Kind: "video", Name: "Integrated Camera", Desc: "Integrated Camera (dshow)", Default: true})
+		list = append(list, InputDevice{Kind: "video", Name: "desktop", Desc: "Fullscreen (gdigrab)", Default: false})
+		list = append(list, InputDevice{Kind: "audio", Name: "Microphone Array", Desc: "Microphone (dshow)", Default: true})
+		list = append(list, InputDevice{Kind: "audio", Name: "Stereo Mix", Desc: "System audio (if available)"})
+	default: // linux / bsd / ...
+		list = append(list, InputDevice{Kind: "video", Name: ":0.0", Desc: "X11 primary display (x11grab)", Default: true})
+		list = append(list, InputDevice{Kind: "video", Name: "/dev/video0", Desc: "Video4Linux2 camera"})
+		list = append(list, InputDevice{Kind: "video", Name: "/dev/video1", Desc: "Video4Linux2 camera 2"})
+		list = append(list, InputDevice{Kind: "audio", Name: "default", Desc: "PulseAudio default source", Default: true})
+		list = append(list, InputDevice{Kind: "audio", Name: "alsa_input", Desc: "ALSA hw:0,0"})
+	}
+	return list
 }

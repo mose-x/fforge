@@ -21,7 +21,7 @@ export function useMediaInput() {
     } catch (e: any) {
       toast(
         (lang === "zh" ? "读取文件失败" : "Failed to read file") + ": " + (e?.message || String(e)),
-        "error"
+        "error",
       );
       return null;
     }

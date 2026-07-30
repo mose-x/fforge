@@ -12,8 +12,8 @@ export function Toasts() {
             t.type === "success"
               ? "border-state-success/40"
               : t.type === "error"
-              ? "border-state-error/40"
-              : "border-border"
+                ? "border-state-error/40"
+                : "border-border"
           }`}
         >
           {t.type === "success" ? (

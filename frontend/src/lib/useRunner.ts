@@ -22,7 +22,7 @@ export function useRunner() {
       inputPath: string,
       outputName: string,
       duration: number,
-      outputPath?: string
+      outputPath?: string,
     ): Promise<boolean> => {
       if (!engine?.ffmpegAvailable) {
         toast(pick(t.ffmpegMissing, lang), "error");
@@ -59,7 +59,15 @@ export function useRunner() {
         duration: duration || 0,
       };
 
-      setProgress({ percent: 0, timeSec: 0, speed: "", frame: 0, status: "running", message: "", outputPath: outPath });
+      setProgress({
+        percent: 0,
+        timeSec: 0,
+        speed: "",
+        frame: 0,
+        status: "running",
+        message: "",
+        outputPath: outPath,
+      });
       setRunning(true);
       try {
         await RunFFmpeg(req);
@@ -68,12 +76,12 @@ export function useRunner() {
         // error event already toasted via store listener; surface here too if needed
         toast(
           (lang === "zh" ? "执行失败" : "Execution failed") + ": " + (e?.message || String(e)),
-          "error"
+          "error",
         );
         return false;
       }
     },
-    [engine, lang, toast, setRunning, setProgress]
+    [engine, lang, toast, setRunning, setProgress],
   );
 
   return { run };

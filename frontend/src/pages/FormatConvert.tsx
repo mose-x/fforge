@@ -35,7 +35,16 @@ import { fmtSize, fmtTime } from "../lib/format";
 import { useMediaInput } from "../lib/useMediaInput";
 import { useRunner } from "../lib/useRunner";
 
-const PRESETS = ["ultrafast", "superfast", "veryfast", "faster", "medium", "slow", "slower", "veryslow"];
+const PRESETS = [
+  "ultrafast",
+  "superfast",
+  "veryfast",
+  "faster",
+  "medium",
+  "slow",
+  "slower",
+  "veryslow",
+];
 const AUDIO_BITRATES = ["64k", "128k", "192k", "256k", "320k"];
 
 export function FormatConvertPage() {
@@ -103,7 +112,9 @@ export function FormatConvertPage() {
           {inputInfo ? (
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[11px] text-muted-foreground">{pick(t.resolution, lang)}</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {pick(t.resolution, lang)}
+                </span>
                 <span className="ffs-mono text-xs truncate">
                   {inputInfo.width ? `${inputInfo.width}×${inputInfo.height}` : "—"}
                 </span>
@@ -113,13 +124,17 @@ export function FormatConvertPage() {
                 <span className="ffs-mono text-xs truncate">{inputInfo.codec || "—"}</span>
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[11px] text-muted-foreground">{pick({ zh: "大小", en: "Size" }, lang)}</span>
+                <span className="text-[11px] text-muted-foreground">
+                  {pick({ zh: "大小", en: "Size" }, lang)}
+                </span>
                 <span className="ffs-mono text-xs truncate">{inputInfo.sizeHuman || "—"}</span>
               </div>
             </div>
           ) : (
             <div className="mb-3 text-xs text-muted-foreground">
-              {lang === "zh" ? "点击下方按钮选择一个媒体文件。" : "Click the button below to select a media file."}
+              {lang === "zh"
+                ? "点击下方按钮选择一个媒体文件。"
+                : "Click the button below to select a media file."}
             </div>
           )}
           <ButtonSecondary icon={<FileVideo className="w-3.5 h-3.5" />} onClick={() => pickFile()}>
@@ -137,7 +152,10 @@ export function FormatConvertPage() {
             <Input value={settings.outputName} onChange={(v) => set("outputName", v)} />
           </Field>
           <div className="h-3" />
-          <Field label={pick(t.container, lang)} hint={`-f ${CONTAINERS.find((c) => c.id === settings.container)?.formatFlag || ""}`}>
+          <Field
+            label={pick(t.container, lang)}
+            hint={`-f ${CONTAINERS.find((c) => c.id === settings.container)?.formatFlag || ""}`}
+          >
             <PillGroup
               options={CONTAINERS.map((c) => ({ value: c.id, label: c.label }))}
               value={settings.container}
@@ -312,7 +330,11 @@ export function FormatConvertPage() {
 
       {/* mobile/narrow: surface a quick start shortcut at the bottom of the content */}
       <div className="lg:hidden flex gap-2 mt-4">
-        <ButtonSecondary icon={<Play className="w-4 h-4" />} disabled={!inputPath} className="flex-1">
+        <ButtonSecondary
+          icon={<Play className="w-4 h-4" />}
+          disabled={!inputPath}
+          className="flex-1"
+        >
           {pick(t.preview, lang)}
         </ButtonSecondary>
       </div>

@@ -15,7 +15,9 @@ export function ComingSoonPage() {
       <div className="h-14 shrink-0 border-b border-border px-4 md:px-6 flex items-center justify-between">
         <div className="flex flex-col min-w-0">
           <span className="text-xs text-muted-foreground">{pick(t.secMedia, lang)}</span>
-          <span className="ffs-display font-semibold text-lg truncate">{pick(t.comingSoon, lang)}</span>
+          <span className="ffs-display font-semibold text-lg truncate">
+            {pick(t.comingSoon, lang)}
+          </span>
         </div>
       </div>
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-3">
