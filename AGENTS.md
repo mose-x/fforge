@@ -1,12 +1,12 @@
 # AGENTS.md
 
-## Hook 仓库
+## Hook Repository
 
-code-hooks：<https://github.com/mose-x/code-hooks>
+code-hooks: <https://github.com/mose-x/code-hooks>
 
-## 提交流程
+## Commit Workflow
 
-1. **Feature 分支开发**：新建 feature 分支进行开发，**不要直接推 main**
-2. **推送 feature 分支**：推送到远程后创建 PR
-3. **等待 CI 全绿**：所有 CI check（lint / test / commit-lint）必须全部通过
-4. **Merge 到 main**：CI 全绿后通过 PR Squash merge 合并
+1. **Feature branch**: Create a feature branch for development. **Never push directly to main.**
+2. **Push & PR**: Push the feature branch to remote, then open a Pull Request.
+3. **Wait for CI**: All CI checks (lint / test / commit-lint) must pass and be fully green.
+4. **Merge to main**: Once CI is green, squash merge the PR into main.
