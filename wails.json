@@ -11,10 +11,10 @@
     "email": ""
   },
   "info": {
-    "companyName": "fforge",
+    "companyName": "mose-x",
     "productName": "fforge",
     "productVersion": "1.0.0",
-    "copyright": "Copyright © 2026",
+    "copyright": "MIT License",
     "comments": "A cross-platform FFmpeg desktop GUI built with Wails + React."
   },
   "wailsjsdir": "./frontend/src",

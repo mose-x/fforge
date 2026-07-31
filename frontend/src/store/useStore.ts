@@ -53,6 +53,9 @@ interface AppState {
   setRunning: (r: boolean) => void;
   toast: (message: string, type?: Toast["type"]) => void;
   dismissToast: (id: number) => void;
+  // update dialog
+  showUpdate: boolean;
+  setShowUpdate: (v: boolean) => void;
 }
 
 let progressBound = false;
@@ -68,6 +71,7 @@ export const useStore = create<AppState>((set, get) => ({
   inputFiles: [],
   progress: null,
   running: false,
+  showUpdate: false,
 
   init: () => {
     // Apply initial theme class to <html>
@@ -141,4 +145,5 @@ export const useStore = create<AppState>((set, get) => ({
     setTimeout(() => get().dismissToast(id), 3800);
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((x) => x.id !== id) }),
+  setShowUpdate: (showUpdate) => set({ showUpdate }),
 }));

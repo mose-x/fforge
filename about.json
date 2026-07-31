@@ -1,0 +1,7 @@
+{
+  "version": "1.0.0",
+  "goVersion": "1.25",
+  "license": "MIT License",
+  "repoUrl": "https://github.com/mose-x/fforge",
+  "updateUrl": "https://api.github.com/repos/mose-x/fforge/releases/latest"
+}

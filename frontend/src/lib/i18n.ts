@@ -46,6 +46,22 @@ export const t = {
   startRecord: { zh: "开始录制 / Record", en: "Record" },
   stopRecord: { zh: "停止录制 / Stop", en: "Stop" },
   startStream: { zh: "开始推流 / Stream", en: "Stream" },
+  // Update dialog
+  updateTitle: { zh: "检查更新 / Check Update", en: "Check Update" },
+  updateCurrentVersion: { zh: "当前版本", en: "Current version" },
+  updateChecking: { zh: "正在检查更新...", en: "Checking for updates..." },
+  updateLatest: { zh: "已是最新版本", en: "You are on the latest version" },
+  updateNewVersion: { zh: "发现新版本", en: "New version available" },
+  updateDownload: { zh: "下载更新 / Download", en: "Download" },
+  updateDownloading: { zh: "正在下载...", en: "Downloading..." },
+  updateReady: {
+    zh: "下载完成，点击安装并重启",
+    en: "Download complete. Click to install and restart.",
+  },
+  updateApply: { zh: "安装并重启 / Install & Restart", en: "Install & Restart" },
+  updateRetry: { zh: "重试 / Retry", en: "Retry" },
+  updateRestarting: { zh: "正在重启应用...", en: "Restarting app..." },
+  updateCheckBtn: { zh: "检查更新", en: "Check Update" },
   // Format convert
   inputSource: { zh: "输入源 / Input Source", en: "Input Source" },
   sourceInfo: { zh: "源文件信息 / Source info", en: "Source info" },

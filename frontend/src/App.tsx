@@ -16,9 +16,10 @@ import { MediaInfoPage } from "./pages/MediaInfo";
 import { useStore } from "./store/useStore";
 import { EngineStatus as GetEngineStatus } from "./wailsjs/go/main/App";
 import { t, pick } from "./lib/i18n";
+import { UpdateDialog } from "./components/UpdateDialog";
 
 export default function App() {
-  const { page, lang, init, setEngine } = useStore();
+  const { page, lang, init, setEngine, showUpdate, setShowUpdate } = useStore();
 
   useEffect(() => {
     init();
@@ -70,6 +71,7 @@ export default function App() {
       </div>
 
       <Toasts />
+      {showUpdate && <UpdateDialog onClose={() => setShowUpdate(false)} />}
       {/* hidden breadcrumb ref for accessibility */}
       <span className="sr-only">{breadcrumb}</span>
     </div>
