@@ -1,10 +1,10 @@
-import { Moon, Sun, Settings, CircleHelp, Terminal } from "lucide-react";
+import { Moon, Sun, Settings, CircleHelp, Terminal, RefreshCw } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { t, pick } from "../lib/i18n";
 import type { Lang } from "../lib/i18n";
 
 export function Header() {
-  const { theme, lang, toggleTheme, setLang, toast } = useStore();
+  const { theme, lang, toggleTheme, setLang, toast, setShowUpdate } = useStore();
 
   return (
     <header className="h-14 shrink-0 border-b border-border px-5 flex items-center justify-between bg-card drag-region">
@@ -56,6 +56,16 @@ export function Header() {
           ) : (
             <Sun className="w-[18px] h-[18px]" />
           )}
+        </button>
+
+        {/* Check Update */}
+        <button
+          className="h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center"
+          aria-label={pick(t.updateCheckBtn, lang)}
+          title={pick(t.updateCheckBtn, lang)}
+          onClick={() => setShowUpdate(true)}
+        >
+          <RefreshCw className="w-[18px] h-[18px]" />
         </button>
 
         {/* Settings */}

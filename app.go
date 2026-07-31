@@ -20,14 +20,17 @@ type App struct {
 	ctx        context.Context
 	ffmpegPath string
 	probePath  string
+	appInfo    AppInfo
 }
 
 // NewApp creates a new App instance.
 func NewApp() *App {
-	return &App{
+	app := &App{
 		ffmpegPath: lookupBin("ffmpeg"),
 		probePath:  lookupBin("ffprobe"),
 	}
+	app.loadAboutInfo()
+	return app
 }
 
 // OnStartup is called when the app starts.

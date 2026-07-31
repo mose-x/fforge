@@ -233,4 +233,46 @@ export namespace main {
       this.default = source["default"];
     }
   }
+  export class AppInfo {
+    version: string;
+    goVersion: string;
+    license: string;
+    repoUrl: string;
+    updateUrl: string;
+
+    static createFrom(source: any = {}) {
+      return new AppInfo(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.version = source["version"];
+      this.goVersion = source["goVersion"];
+      this.license = source["license"];
+      this.repoUrl = source["repoUrl"];
+      this.updateUrl = source["updateUrl"];
+    }
+  }
+  export class UpdateInfo {
+    hasUpdate: boolean;
+    latestVersion: string;
+    changelog: string;
+    downloadUrl: string;
+    filename: string;
+    sha256: string;
+
+    static createFrom(source: any = {}) {
+      return new UpdateInfo(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.hasUpdate = source["hasUpdate"];
+      this.latestVersion = source["latestVersion"];
+      this.changelog = source["changelog"];
+      this.downloadUrl = source["downloadUrl"];
+      this.filename = source["filename"];
+      this.sha256 = source["sha256"];
+    }
+  }
 }
