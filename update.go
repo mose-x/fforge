@@ -161,8 +161,8 @@ func matchPlatformAsset(assets []GitHubAsset) (GitHubAsset, bool) {
 		if runtime.GOOS == "linux" && (strings.HasSuffix(name, ".deb") || strings.HasSuffix(name, ".rpm")) {
 			continue
 		}
-		// Windows self-update uses bare .exe, not .zip (install bundle)
-		if runtime.GOOS == "windows" && strings.HasSuffix(name, ".zip") {
+		// Windows self-update uses bare .exe, not the NSIS installer
+		if runtime.GOOS == "windows" && strings.Contains(name, "installer") {
 			continue
 		}
 		return a, true
