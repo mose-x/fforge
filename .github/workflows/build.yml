@@ -78,15 +78,15 @@ jobs:
           fi
 
       - name: Assemble release assets
-        # Bare .exe for self-update; zip with bundled ffmpeg for initial install.
+        # Bare .exe for self-update; NSIS installer with bundled ffmpeg for initial install.
         shell: bash
         run: |
           ASSET_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.exe"
           cp build/bin/fforge.exe "build/bin/${ASSET_NAME}"
-          ZIP_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.zip"
-          cd build/bin && 7z a "$ZIP_NAME" fforge.exe ffmpeg.exe ffprobe.exe
+          INSTALLER_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}-installer.exe"
+          makensis /DVERSION="${VERSION}" /DASSET_ARCH="${ASSET_ARCH}" /DSRCDIR="build/bin" build/windows/installer.nsi
           echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
-          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+          echo "INSTALLER_NAME=$INSTALLER_NAME" >> $GITHUB_ENV
 
       - name: Upload .exe (self-update)
         uses: actions/upload-artifact@v4
@@ -94,11 +94,11 @@ jobs:
           name: ${{ env.ASSET_NAME }}
           path: build/bin/${{ env.ASSET_NAME }}
 
-      - name: Upload .zip (install bundle)
+      - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ZIP_NAME }}
-          path: build/bin/${{ env.ZIP_NAME }}
+          name: ${{ env.INSTALLER_NAME }}
+          path: build/bin/${{ env.INSTALLER_NAME }}
 
   # ====== macOS ======
   build-macos:
