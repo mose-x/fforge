@@ -92,7 +92,7 @@ jobs:
             choco install nsis -y --no-progress
             MAKENSIS="/c/Program Files (x86)/NSIS/makensis.exe"
           fi
-          "$MAKENSIS" /DVERSION="${VERSION}" /DASSET_ARCH="${ASSET_ARCH}" /DSRCDIR="build/bin" build/windows/installer.nsi
+          "$MAKENSIS" /DVERSION="${VERSION}" /DASSET_ARCH="${ASSET_ARCH}" /DSRCDIR="$GITHUB_WORKSPACE/build/bin" build/windows/installer.nsi
           echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
           echo "INSTALLER_NAME=$INSTALLER_NAME" >> $GITHUB_ENV
 
