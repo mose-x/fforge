@@ -120,11 +120,64 @@ jobs:
           codesign --verify --verbose=1 "$APP"
 
       - name: Create DMG
+        # Build a drag-to-Applications DMG (standard macOS install UX) using
+        # create-dmg. --app-drop-link synthesizes the Applications folder
+        # shortcut on the right; a pure-white background PNG with install
+        # hints is rendered via Pillow. The bottom security note shows the
+        # xattr command to clear the quarantine block, since this open-source
+        # release is unsigned and macOS Gatekeeper will flag it as "damaged".
         run: |
           brew install create-dmg
+          # Generate a 660x400 pure-white background PNG with install hints
+          # rendered via Pillow. Three text blocks, all visible without
+          # resizing the window:
+          #   1. title "fforge" (top, centered)
+          #   2. drag hint (middle, above the app icon)
+          #   3. security note (bottom): how to clear the quarantine block
+          #      via xattr -cr, since this open-source release is unsigned.
+          python3 -m venv /tmp/dmgvenv
+          /tmp/dmgvenv/bin/pip install --quiet Pillow
+          BG_PATH="build/bin/dmg_bg.png"
+          export BG_PATH
+          # Background image dimensions MUST match create-dmg --window-size:
+          # Finder shows only the window-size region of the background.
+          /tmp/dmgvenv/bin/python << 'PYEOF'
+          import os
+          from PIL import Image, ImageDraw, ImageFont
+          w, h = 660, 400
+          img = Image.new("RGBA", (w, h), (255, 255, 255, 255))
+          draw = ImageDraw.Draw(img)
+          def load_font(size):
+              for path in [
+                  "/System/Library/Fonts/PingFang.ttc",
+                  "/System/Library/Fonts/Helvetica.ttc",
+                  "/System/Library/Fonts/Supplemental/Arial.ttf",
+              ]:
+                  try:
+                      return ImageFont.truetype(path, size)
+                  except Exception:
+                      pass
+              return ImageFont.load_default()
+          title_font = load_font(24)
+          hint_font = load_font(14)
+          small_font = load_font(12)
+          cx = w / 2
+          draw.text((cx, 40), "fforge", fill=(30, 30, 46, 255),
+                    font=title_font, anchor="mm")
+          draw.text((cx, 130), "Drag the app icon to the Applications folder on the right",
+                    fill=(90, 90, 90, 255), font=hint_font, anchor="mm")
+          draw.text((cx, 300),
+                    'If macOS says "damaged", open Terminal and run:',
+                    fill=(120, 120, 120, 255), font=small_font, anchor="mm")
+          draw.text((cx, 330),
+                    'xattr -cr "/Applications/fforge.app"',
+                    fill=(40, 40, 40, 255), font=hint_font, anchor="mm")
+          img.save(os.environ["BG_PATH"])
+          PYEOF
           DMG_NAME="fforge-${VERSION}-macos-${ASSET_ARCH}.dmg"
           create-dmg \
             --volname "fforge" \
+            --background "$BG_PATH" \
             --window-pos 200 120 \
             --window-size 660 400 \
             --icon-size 100 \
