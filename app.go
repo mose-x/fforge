@@ -425,6 +425,11 @@ func lookupBin(name string) string {
 			return v
 		}
 	}
+	// bundled binary next to the app executable
+	if bundled := lookupBundledBin(name); bundled != "" {
+		return bundled
+	}
+	// system PATH fallback
 	p, err := exec.LookPath(name)
 	if err != nil {
 		return ""
