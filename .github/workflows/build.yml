@@ -80,6 +80,8 @@ jobs:
       - name: Assemble release assets
         # Bare .exe for self-update; NSIS installer with bundled ffmpeg for initial install.
         shell: bash
+        env:
+          MSYS_NO_PATHCONV: 1
         run: |
           ASSET_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.exe"
           cp build/bin/fforge.exe "build/bin/${ASSET_NAME}"
