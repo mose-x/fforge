@@ -50,6 +50,25 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
           echo "about.json version bumped to $VERSION"
 
+      - name: Download FFmpeg
+        # Download static FFmpeg binaries from BtbN/FFmpeg-Builds.
+        # The archive contains bin/ffmpeg.exe and bin/ffprobe.exe.
+        shell: bash
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" ;;
+            arm64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-winarm64-gpl.zip" ;;
+          esac
+          curl -L "$FFMPEG_URL" -o /tmp/ffmpeg.zip
+          mkdir -p /tmp/ffmpeg_extract
+          unzip -o /tmp/ffmpeg.zip -d /tmp/ffmpeg_extract >/dev/null
+          FFMPEG_BIN=$(find /tmp/ffmpeg_extract -name ffmpeg.exe -path '*/bin/*' | head -1)
+          FFPROBE_BIN=$(find /tmp/ffmpeg_extract -name ffprobe.exe -path '*/bin/*' | head -1)
+          mkdir -p build/bin
+          cp "$FFMPEG_BIN" build/bin/ffmpeg.exe
+          cp "$FFPROBE_BIN" build/bin/ffprobe.exe
+          echo "FFmpeg downloaded: $(ls -la build/bin/ffmpeg.exe build/bin/ffprobe.exe)"
+
       - name: Build
         shell: bash
         run: |
@@ -57,15 +76,29 @@ jobs:
           if [ -f "build/bin/fforge-${{ matrix.arch }}.exe" ] && [ ! -f "build/bin/fforge.exe" ]; then
             mv "build/bin/fforge-${{ matrix.arch }}.exe" "build/bin/fforge.exe"
           fi
-          ASSET_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.exe"
-          mv build/bin/fforge.exe "build/bin/${ASSET_NAME}"
-          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
 
-      - name: Upload Artifact
+      - name: Assemble release assets
+        # Bare .exe for self-update; zip with bundled ffmpeg for initial install.
+        shell: bash
+        run: |
+          ASSET_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.exe"
+          cp build/bin/fforge.exe "build/bin/${ASSET_NAME}"
+          ZIP_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.zip"
+          cd build/bin && 7z a "$ZIP_NAME" fforge.exe ffmpeg.exe ffprobe.exe
+          echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_ENV
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_ENV
+
+      - name: Upload .exe (self-update)
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.ASSET_NAME }}
           path: build/bin/${{ env.ASSET_NAME }}
+
+      - name: Upload .zip (install bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.ZIP_NAME }}
+          path: build/bin/${{ env.ZIP_NAME }}
 
   # ====== macOS ======
   build-macos:
@@ -110,8 +143,44 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
           echo "about.json version bumped to $VERSION"
 
+      - name: Download FFmpeg
+        # Download static FFmpeg binaries from osxexperts.net.
+        # Each zip contains a single binary (ffmpeg or ffprobe).
+        # NOTE: URLs are version-pinned and may drift — update periodically.
+        shell: bash
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64)
+              curl -L "https://www.osxexperts.net/ffmpeg80intel.zip" -o /tmp/ffmpeg.zip
+              curl -L "https://www.osxexperts.net/ffprobe80intel.zip" -o /tmp/ffprobe.zip
+              ;;
+            arm64)
+              curl -L "https://www.osxexperts.net/ffmpeg81arm.zip" -o /tmp/ffmpeg.zip
+              curl -L "https://www.osxexperts.net/ffprobe81arm.zip" -o /tmp/ffprobe.zip
+              ;;
+          esac
+          mkdir -p /tmp/ffmpeg_extract
+          unzip -o /tmp/ffmpeg.zip -d /tmp/ffmpeg_extract >/dev/null
+          unzip -o /tmp/ffprobe.zip -d /tmp/ffmpeg_extract >/dev/null
+          FFMPEG_BIN=$(find /tmp/ffmpeg_extract -type f -name 'ffmpeg' | head -1)
+          FFPROBE_BIN=$(find /tmp/ffmpeg_extract -type f -name 'ffprobe' | head -1)
+          echo "FFMPEG_BIN=$FFMPEG_BIN" >> $GITHUB_ENV
+          echo "FFPROBE_BIN=$FFPROBE_BIN" >> $GITHUB_ENV
+          echo "FFmpeg: $(ls -la "$FFMPEG_BIN" "$FFPROBE_BIN")"
+
       - name: Build .app
         run: wails build -platform darwin/${{ matrix.arch }} -o fforge
+
+      - name: Copy FFmpeg into .app bundle
+        # Place ffmpeg/ffprobe in Contents/Resources/ so the app resolves
+        # them at runtime. The subsequent codesign --deep will sign them.
+        run: |
+          RES="build/bin/fforge.app/Contents/Resources"
+          mkdir -p "$RES"
+          cp "$FFMPEG_BIN" "$RES/ffmpeg"
+          cp "$FFPROBE_BIN" "$RES/ffprobe"
+          chmod +x "$RES/ffmpeg" "$RES/ffprobe"
+          echo "Bundle resources:" && ls -la "$RES"
 
       - name: Ad-hoc sign .app
         run: |
@@ -266,6 +335,24 @@ jobs:
           jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
           echo "about.json version bumped to $VERSION"
 
+      - name: Download FFmpeg
+        # Download static FFmpeg binaries from BtbN/FFmpeg-Builds.
+        # The archive contains bin/ffmpeg and bin/ffprobe.
+        shell: bash
+        run: |
+          case "${{ matrix.arch }}" in
+            amd64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" ;;
+            arm64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linuxarm64-gpl.tar.xz" ;;
+          esac
+          curl -L "$FFMPEG_URL" -o /tmp/ffmpeg.tar.xz
+          mkdir -p /tmp/ffmpeg_extract
+          tar -xf /tmp/ffmpeg.tar.xz -C /tmp/ffmpeg_extract
+          FFMPEG_BIN=$(find /tmp/ffmpeg_extract -type f -name ffmpeg -path '*/bin/*' | head -1)
+          FFPROBE_BIN=$(find /tmp/ffmpeg_extract -type f -name ffprobe -path '*/bin/*' | head -1)
+          echo "FFMPEG_BIN=$FFMPEG_BIN" >> $GITHUB_ENV
+          echo "FFPROBE_BIN=$FFPROBE_BIN" >> $GITHUB_ENV
+          echo "FFmpeg: $(ls -la "$FFMPEG_BIN" "$FFPROBE_BIN")"
+
       - name: Build
         run: |
           wails build -platform linux/${{ matrix.arch }} -o fforge
@@ -285,6 +372,7 @@ jobs:
           RPM_NAME="fforge-${VERSION}-linux-${ASSET_ARCH}.rpm"
           STAGING="$(mktemp -d)"
           mkdir -p "$STAGING/share/applications"
+          mkdir -p "$STAGING/lib/fforge"
           cat > "$STAGING/share/applications/fforge.desktop" <<'DESKTOP'
           [Desktop Entry]
           Type=Application
@@ -295,6 +383,9 @@ jobs:
           Terminal=false
           Categories=AudioVideo;Video;
           DESKTOP
+          cp "$FFMPEG_BIN" "$STAGING/lib/fforge/ffmpeg"
+          cp "$FFPROBE_BIN" "$STAGING/lib/fforge/ffprobe"
+          chmod +x "$STAGING/lib/fforge/ffmpeg" "$STAGING/lib/fforge/ffprobe"
           fpm -s dir -t deb \
             -n fforge -v "${VERSION}" -a "${DEB_ARCH}" \
             --depends libgtk-3-0 \
@@ -304,7 +395,8 @@ jobs:
             --description "fforge - FFmpeg desktop GUI" \
             -p "build/bin/${DEB_NAME}" \
             "build/bin/${ASSET_NAME}=/usr/bin/fforge" \
-            "$STAGING/share/=/usr/share/"
+            "$STAGING/share/=/usr/share/" \
+            "$STAGING/lib/=/usr/lib/"
           fpm -s dir -t rpm \
             -n fforge -v "${VERSION}" -a "${RPM_ARCH}" \
             --depends gtk3 \
@@ -314,7 +406,8 @@ jobs:
             --description "fforge - FFmpeg desktop GUI" \
             -p "build/bin/${RPM_NAME}" \
             "build/bin/${ASSET_NAME}=/usr/bin/fforge" \
-            "$STAGING/share/=/usr/share/"
+            "$STAGING/share/=/usr/share/" \
+            "$STAGING/lib/=/usr/lib/"
           echo "DEB_NAME=$DEB_NAME" >> $GITHUB_ENV
           echo "RPM_NAME=$RPM_NAME" >> $GITHUB_ENV
 
