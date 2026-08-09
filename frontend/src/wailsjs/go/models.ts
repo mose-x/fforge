@@ -260,6 +260,9 @@ export namespace main {
     downloadUrl: string;
     filename: string;
     sha256: string;
+    manualInstall: boolean;
+    installerUrl: string;
+    installerFilename: string;
 
     static createFrom(source: any = {}) {
       return new UpdateInfo(source);
@@ -273,6 +276,9 @@ export namespace main {
       this.downloadUrl = source["downloadUrl"];
       this.filename = source["filename"];
       this.sha256 = source["sha256"];
+      this.manualInstall = source["manualInstall"];
+      this.installerUrl = source["installerUrl"];
+      this.installerFilename = source["installerFilename"];
     }
   }
 }
