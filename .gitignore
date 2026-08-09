@@ -9,6 +9,7 @@ frontend/package.json.md5
 *.dll
 *.so
 *.dylib
+/fforge
 
 # dependencies
 frontend/node_modules/
