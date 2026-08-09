@@ -103,6 +103,18 @@ func isStableVersion(tag string) bool {
 	return stableVersionReg.MatchString(strings.TrimPrefix(tag, "v"))
 }
 
+// pickLatestStable returns the newest release whose tag (minus "v") is a pure
+// X.Y.Z, skipping rc/beta/... tags. Releases are assumed newest-first (the
+// GitHub releases LIST order). Pure-logic, unit-tested.
+func pickLatestStable(releases []GitHubRelease) (GitHubRelease, bool) {
+	for i := range releases {
+		if isStableVersion(releases[i].TagName) {
+			return releases[i], true
+		}
+	}
+	return GitHubRelease{}, false
+}
+
 // CheckUpdate queries the GitHub Releases API for a newer stable version. It
 // uses the configured proxy (so it works behind the GFW), fetches the releases
 // LIST (newest first) and skips any tag that isn't a pure X.Y.Z (so rc/beta
@@ -146,25 +158,19 @@ func (a *App) CheckUpdate() (UpdateInfo, error) {
 		return UpdateInfo{}, fmt.Errorf("failed to parse release info: %w", err)
 	}
 
-	// Pick the newest release whose tag is a pure X.Y.Z. Releases come back
-	// newest-first, so the first match is the latest stable.
-	var release *GitHubRelease
-	for i := range releases {
-		if isStableVersion(releases[i].TagName) {
-			release = &releases[i]
-			break
-		}
-	}
-	if release == nil {
+	// Pick the newest release whose tag is a pure X.Y.Z (releases come back
+	// newest-first, so the first match is the latest stable). Extracted to
+	// pickLatestStable so the stable-version filter is unit-testable.
+	release, ok := pickLatestStable(releases)
+	if !ok {
 		// No pure-numeric release among the recent ones (e.g. only rc builds
 		// published). Treat as "no stable update available" rather than an
 		// error: the user is current with respect to stable releases.
 		return UpdateInfo{HasUpdate: false}, nil
 	}
 
-	rel := *release
-	return decideUpdate(a.appInfo.Version, rel, runtime.GOOS, runtime.GOARCH, func(name string) string {
-		return fetchAssetSha256(client, rel.Assets, name)
+	return decideUpdate(a.appInfo.Version, release, runtime.GOOS, runtime.GOARCH, func(name string) string {
+		return fetchAssetSha256(client, release.Assets, name)
 	})
 }
 
