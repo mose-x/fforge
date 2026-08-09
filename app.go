@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+
+	"fforge/internal/config"
+	"fforge/internal/downloader"
 )
 
 // App is the application struct bound to the frontend.
@@ -21,6 +24,8 @@ type App struct {
 	ffmpegPath string
 	probePath  string
 	appInfo    AppInfo
+	settings   *config.SettingsManager
+	downloader *downloader.Downloader
 }
 
 // NewApp creates a new App instance.
@@ -28,6 +33,8 @@ func NewApp() *App {
 	app := &App{
 		ffmpegPath: lookupBin("ffmpeg"),
 		probePath:  lookupBin("ffprobe"),
+		settings:   config.NewSettingsManager(),
+		downloader: downloader.NewDownloader(),
 	}
 	app.loadAboutInfo()
 	return app
