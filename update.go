@@ -39,13 +39,24 @@ type GitHubAsset struct {
 }
 
 // UpdateInfo is returned to the frontend describing an available update.
+//
+// For minor/patch updates (same major version), HasUpdate is true and
+// DownloadURL/Filename/Sha256 point at the bare self-update binary.
+//
+// For a major-version bump, ManualInstall is true and InstallerURL/
+// InstallerFilename point at the platform installer (NSIS / DMG / .deb),
+// while DownloadURL is empty — the user downloads and runs the installer
+// manually; it also refreshes the bundled FFmpeg.
 type UpdateInfo struct {
-	HasUpdate     bool   `json:"hasUpdate"`
-	LatestVersion string `json:"latestVersion"`
-	Changelog     string `json:"changelog"`
-	DownloadURL   string `json:"downloadUrl"`
-	Filename      string `json:"filename"`
-	Sha256        string `json:"sha256"`
+	HasUpdate         bool   `json:"hasUpdate"`
+	LatestVersion     string `json:"latestVersion"`
+	Changelog         string `json:"changelog"`
+	DownloadURL       string `json:"downloadUrl"`
+	Filename          string `json:"filename"`
+	Sha256            string `json:"sha256"`
+	ManualInstall     bool   `json:"manualInstall"`
+	InstallerURL      string `json:"installerUrl"`
+	InstallerFilename string `json:"installerFilename"`
 }
 
 // UpdateProgress is emitted via Wails events during download.
@@ -112,7 +123,27 @@ func (a *App) CheckUpdate() (UpdateInfo, error) {
 		return UpdateInfo{HasUpdate: false, LatestVersion: remoteVersion}, nil
 	}
 
-	asset, ok := matchPlatformAsset(release.Assets)
+	// Major-version bump: skip the bare-binary self-update. The new major
+	// may bundle a different FFmpeg or carry breaking changes, so point the
+	// user at the platform installer instead — they download and run it
+	// manually, and the installer refreshes the bundled FFmpeg too.
+	if majorVersion(remoteVersion) > majorVersion(a.appInfo.Version) {
+		inst, ok := matchPlatformInstallerAsset(release.Assets, runtime.GOOS, runtime.GOARCH)
+		if !ok {
+			return UpdateInfo{}, fmt.Errorf("major update v%s is available but no installer asset matches your platform (%s/%s); download it from the releases page", remoteVersion, runtime.GOOS, runtime.GOARCH)
+		}
+		return UpdateInfo{
+			HasUpdate:         true,
+			LatestVersion:     remoteVersion,
+			Changelog:         release.Body,
+			ManualInstall:     true,
+			InstallerURL:      inst.BrowserDownloadURL,
+			InstallerFilename: inst.Name,
+			Sha256:            fetchAssetSha256(client, release.Assets, inst.Name),
+		}, nil
+	}
+
+	asset, ok := matchPlatformAsset(release.Assets, runtime.GOOS, runtime.GOARCH)
 	if !ok {
 		return UpdateInfo{}, fmt.Errorf("new version v%s is available but no download asset matches your platform (%s/%s)", remoteVersion, runtime.GOOS, runtime.GOARCH)
 	}
@@ -129,22 +160,25 @@ func (a *App) CheckUpdate() (UpdateInfo, error) {
 	}, nil
 }
 
-// matchPlatformAsset picks the release asset for the current OS/arch.
-// Asset names follow: fforge-<ver>-<os>-<arch><ext>
+// matchPlatformAsset picks the release asset for the given OS/arch — the
+// bare self-update binary, not the installer. Asset names follow:
 //
 //	windows-x64.exe / windows-arm64.exe
 //	macos-x64.bin   / macos-arm64.bin
 //	linux-x64       / linux-arm64
-func matchPlatformAsset(assets []GitHubAsset) (GitHubAsset, bool) {
+//
+// goos/goarch are parameters (not read from runtime) so all platform combos
+// are unit-testable on any host.
+func matchPlatformAsset(assets []GitHubAsset, goos, goarch string) (GitHubAsset, bool) {
 	osToken := map[string]string{
 		"windows": "windows",
 		"darwin":  "macos",
 		"linux":   "linux",
-	}[runtime.GOOS]
+	}[goos]
 	archToken := map[string]string{
 		"amd64": "x64",
 		"arm64": "arm64",
-	}[runtime.GOARCH]
+	}[goarch]
 	if osToken == "" || archToken == "" {
 		return GitHubAsset{}, false
 	}
@@ -154,20 +188,78 @@ func matchPlatformAsset(assets []GitHubAsset) (GitHubAsset, bool) {
 			continue
 		}
 		// macOS self-update uses bare .bin, not .dmg
-		if runtime.GOOS == "darwin" && strings.HasSuffix(name, ".dmg") {
+		if goos == "darwin" && strings.HasSuffix(name, ".dmg") {
 			continue
 		}
 		// Linux self-update uses bare binary, not .deb/.rpm
-		if runtime.GOOS == "linux" && (strings.HasSuffix(name, ".deb") || strings.HasSuffix(name, ".rpm")) {
+		if goos == "linux" && (strings.HasSuffix(name, ".deb") || strings.HasSuffix(name, ".rpm")) {
 			continue
 		}
 		// Windows self-update uses bare .exe, not the NSIS installer
-		if runtime.GOOS == "windows" && strings.Contains(name, "installer") {
+		if goos == "windows" && strings.Contains(name, "installer") {
 			continue
 		}
 		return a, true
 	}
 	return GitHubAsset{}, false
+}
+
+// matchPlatformInstallerAsset picks the platform installer asset — the
+// inverse of matchPlatformAsset. Used for a major-version bump, where the
+// user must manually download and run the full installer (which also
+// refreshes the bundled FFmpeg). goos/goarch are parameters for
+// testability on any host.
+//
+//	windows: the NSIS installer (*-installer.exe)
+//	macos:   the .dmg
+//	linux:   the .deb (most common distros; .rpm users grab it from the
+//	         release page)
+func matchPlatformInstallerAsset(assets []GitHubAsset, goos, goarch string) (GitHubAsset, bool) {
+	osToken := map[string]string{
+		"windows": "windows",
+		"darwin":  "macos",
+		"linux":   "linux",
+	}[goos]
+	archToken := map[string]string{
+		"amd64": "x64",
+		"arm64": "arm64",
+	}[goarch]
+	if osToken == "" || archToken == "" {
+		return GitHubAsset{}, false
+	}
+	for _, a := range assets {
+		name := strings.ToLower(a.Name)
+		if !strings.Contains(name, osToken) || !strings.Contains(name, archToken) {
+			continue
+		}
+		switch goos {
+		case "windows":
+			if strings.HasSuffix(name, ".exe") && strings.Contains(name, "installer") {
+				return a, true
+			}
+		case "darwin":
+			if strings.HasSuffix(name, ".dmg") {
+				return a, true
+			}
+		case "linux":
+			if strings.HasSuffix(name, ".deb") {
+				return a, true
+			}
+		}
+	}
+	return GitHubAsset{}, false
+}
+
+// majorVersion parses the leading numeric segment of a version string
+// (with or without a leading "v"). Returns 0 on parse failure.
+func majorVersion(v string) int {
+	v = strings.TrimPrefix(v, "v")
+	first := strings.SplitN(v, ".", 2)[0]
+	var n int
+	if _, err := fmt.Sscanf(first, "%d", &n); err != nil {
+		return 0
+	}
+	return n
 }
 
 // fetchAssetSha256 downloads sha256sums.txt and returns the hash for filename.
