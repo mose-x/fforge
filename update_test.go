@@ -3,9 +3,17 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
+
+	"fforge/internal/config"
+	"fforge/internal/downloader"
 )
 
 // fullTestAssets is a complete release asset list (both arches, bare binary
@@ -280,5 +288,77 @@ func TestIsStableVersion(t *testing.T) {
 		if got := isStableVersion(c.tag); got != c.want {
 			t.Errorf("isStableVersion(%q) = %v, want %v", c.tag, got, c.want)
 		}
+	}
+}
+
+func TestPickLatestStable(t *testing.T) {
+	// Releases come back newest-first; the first pure-X.Y.Z is the latest stable.
+	releases := []GitHubRelease{
+		{TagName: "v2.0.0-rc1"}, // skipped (suffix)
+		{TagName: "v1.2.0"},     // first stable -> picked
+		{TagName: "v1.1.0"},     // later stable (not picked)
+	}
+	got, ok := pickLatestStable(releases)
+	if !ok || got.TagName != "v1.2.0" {
+		t.Errorf("pickLatestStable = (%q,%v), want (v1.2.0,true)", got.TagName, ok)
+	}
+	// No stable release at all -> ok=false.
+	if _, ok := pickLatestStable([]GitHubRelease{{TagName: "v2.0.0-beta"}, {TagName: "latest"}}); ok {
+		t.Error("expected no stable release")
+	}
+	// Empty list -> ok=false.
+	if _, ok := pickLatestStable(nil); ok {
+		t.Error("expected false for empty list")
+	}
+}
+
+// TestCheckUpdateEndToEnd exercises the full CheckUpdate wiring against a fake
+// GitHub releases LIST server: proxy-disabled client -> list fetch -> stable
+// filter -> decideUpdate -> matchPlatformAsset for the HOST platform. Settings
+// are isolated to a temp home so no real ~/.fforge/settings.json is read.
+func TestCheckUpdateEndToEnd(t *testing.T) {
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("USERPROFILE", t.TempDir())
+
+	// One stable release with all-platform assets. The sha256sums.txt asset's
+	// bogus URL ("u/sums") makes fetchAssetSha256 fail fast (no scheme) and
+	// return "" — no network call actually happens.
+	releasesJSON, err := json.Marshal([]GitHubRelease{
+		{TagName: "v1.2.0", Body: "minor release", Assets: fullTestAssets()},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(releasesJSON)
+	}))
+	defer srv.Close()
+
+	app := &App{
+		appInfo:    AppInfo{Version: "1.0.0", UpdateURL: srv.URL + "/releases/latest"},
+		settings:   config.NewSettingsManager(),
+		downloader: downloader.NewDownloader(),
+	}
+	info, err := app.CheckUpdate()
+	if err != nil {
+		t.Fatalf("CheckUpdate: %v", err)
+	}
+	if !info.HasUpdate || info.LatestVersion != "1.2.0" {
+		t.Fatalf("got hasUpdate=%v ver=%q, want true/1.2.0", info.HasUpdate, info.LatestVersion)
+	}
+	// minor/patch (same major) -> bare self-update binary for the HOST platform.
+	osToken := map[string]string{"windows": "windows", "darwin": "macos", "linux": "linux"}[runtime.GOOS]
+	archToken := map[string]string{"amd64": "x64", "arm64": "arm64"}[runtime.GOARCH]
+	wantSuffix := "1.2.0-" + osToken + "-" + archToken
+	if !strings.Contains(info.Filename, wantSuffix) {
+		t.Errorf("Filename=%q, want it to contain %q (host %s/%s)", info.Filename, wantSuffix, runtime.GOOS, runtime.GOARCH)
+	}
+	if info.DownloadURL == "" {
+		t.Error("DownloadURL empty")
+	}
+	// ManualInstall must be false for a minor (same-major) bump.
+	if info.ManualInstall {
+		t.Error("ManualInstall=true on a minor bump, want false")
 	}
 }
