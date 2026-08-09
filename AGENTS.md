@@ -104,7 +104,7 @@ git add <specific files>   # never `git add -A` or `git add .`
 git commit -m "fix(scope): description"
 ```
 
-The pre-commit hook runs `gofmt -l` + `go vet` on staged `.go` files. For `.ts`/`.tsx` files it runs `npx prettier --check` + `npx eslint` **at the repo root** — see Known issues. If the hook rejects, fix the issue and re-commit.
+The pre-commit hook runs `gofmt -l` + `go vet` on staged `.go` files. For `.ts`/`.tsx` files it runs `npx prettier --check` + `npx eslint` **at the repo root**. Two gotchas: (1) frontend (`.ts`/`.tsx`) commits must give the hook the node bin dir on PATH so `npx` resolves — `PATH="/c/Users/mose/.svc/nodejs/23.0.0:$PATH" git commit ...` (see Known issues); (2) `go.mod`/`go.sum` must be staged in a SEPARATE commit with no `.go` files (gofmt chokes on `go.mod` → `expected 'package', found module`). If the hook rejects, fix the issue and re-commit.
 
 ### Step 5: Push
 ```bash
@@ -182,7 +182,16 @@ GitHub-hosted CI runners are NOT behind the GFW — they don't need the proxy. O
 ### Known issues
 - **CRLF**: Windows autocrlf converts `.go` files to CRLF in the working tree. CI (Linux) checks out LF — `gofmt -l` may show false "needs fmt" locally. Use `tr -d '\r' < file | gofmt -l` to verify on LF-normalized content.
 - **`frontend/dist` embed**: `main.go` has `//go:embed all:frontend/dist`, so `go vet` / `go build` / `go test ./...` fail until `frontend/dist` exists. Build it first (`cd frontend && npm install && npm run build`). `frontend/dist` is gitignored, so it is regenerated locally and by CI — never commit it.
-- **Node.js toolchain runs at the repo root**: the hooks detect a Wails project as `go` + `nodejs` and run both. The `nodejs` commands (`npx prettier --check $FILES`, `npx eslint $FILES`, `npm test`) execute in the repo root, but `package.json` + `node_modules` live under `frontend/`. So commits/pushes that touch `.ts`/`.tsx` files hit friction (`npm test` at the root has no `package.json` to run). Address this (e.g. a root `package.json` delegating to `frontend/`) before landing frontend changes; Go-only changes are unaffected.
+- **Node.js toolchain runs at the repo root**: the hooks detect a Wails project as `go` + `nodejs` and run both. The `nodejs` commands (`npx prettier --check $FILES`, `npx eslint $FILES`, `npm test`) execute in the repo root. A root `package.json` (devDeps: eslint/prettier/typescript-eslint/typescript), a root `eslint.config.mjs` (parse-only TS baseline), and root `node_modules` (gitignored, install with `npm install` at root) are in place so `npx` resolves locally without network. BUT `npx`/`npm` are NOT on the hook's PATH by default (only the `.svc` `node` shim is) — commits AND pushes that touch `.ts`/`.tsx` MUST give the hook the node bin dir:
+  ```bash
+  # frontend commit:
+  PATH="/c/Users/mose/.svc/nodejs/23.0.0:$PATH" HTTPS_PROXY=http://127.0.0.1:7890 git commit ...
+  # frontend push (add CGO_ENABLED=0 if the push range also has .go, so
+  # pre-push go test doesn't try the Wails CGO build):
+  PATH="/c/Users/mose/.svc/nodejs/23.0.0:$PATH" HTTPS_PROXY=http://127.0.0.1:7890 HTTP_PROXY=http://127.0.0.1:7890 CGO_ENABLED=0 git push -u origin dev
+  ```
+  Go-only commits/pushes don't need PATH (the `go` toolchain is on PATH).
+- **`go.mod`/`go.sum` must be their own commit**: the pre-commit `gofmt -l` stage is passed ALL staged files, and `gofmt` parses `go.mod` as Go source (`go.mod:1:1: expected 'package', found module`) → reject. Never stage `go.mod`/`go.sum` alongside `.go` files. Commit them alone (a commit with only `.mod`/`.sum` matches no language suffix → no fmt/lint stage → passes cleanly), then commit the `.go` files.
 - **Merge race**: after CI completes, `mergeStateStatus` may show `BLOCKED` for 10-30s before flipping to `CLEAN`. Poll before merging (see Step 7).
 - **`--no-verify`**: never use for normal commits/pushes. Only for ref deletions/force-pushes that the hook can't process. Prefer the GitHub API (`gh api -X DELETE`) for branch/tag deletion.
 - **Dev branch stale commits**: if `dev` accumulates stale commits from prior PRs, the merge-base goes stale -> add/add conflicts. Always recreate `dev` fresh from `main` each cycle (Step 1).
