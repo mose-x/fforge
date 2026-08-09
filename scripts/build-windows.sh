@@ -54,7 +54,11 @@ if [ -f "build/bin/fforge-$ARCH.exe" ] && [ ! -f "build/bin/fforge.exe" ]; then
   mv "build/bin/fforge-$ARCH.exe" "build/bin/fforge.exe"
 fi
 ASSET_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}.exe"
-mv "build/bin/fforge.exe" "build/bin/${ASSET_NAME}"
+# COPY (not mv): keep build/bin/fforge.exe in place because the NSIS
+# installer.nsi does `File "${SRCDIR}\fforge.exe"` — moving it away would make
+# makensis fail. The copy becomes the self-update asset; the original is what
+# the installer bundles.
+cp "build/bin/fforge.exe" "build/bin/${ASSET_NAME}"
 
 # --- Build the NSIS installer (first-install; bundles ffmpeg + ffprobe + the
 # bare exe). makensis must be on PATH; on CI the build.yml "Setup NSIS" step
@@ -67,7 +71,8 @@ SRCDIR="$(pwd)/build/bin"
 MSYS_NO_PATHCONV=1 makensis \
   /DVERSION="${VERSION}" /DASSET_ARCH="${ASSET_ARCH}" /DSRCDIR="${SRCDIR}" \
   build/windows/installer.nsi
-mv "build/bin/${INSTALLER_NAME}" "build/bin/${INSTALLER_NAME}" 2>/dev/null || true
+# installer.nsi's OutFile is already ${SRCDIR}/${INSTALLER_NAME}, so makensis
+# writes the correctly-named installer directly — no rename needed.
 
 echo
 echo "Built:"
