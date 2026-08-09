@@ -61,6 +61,12 @@ export const t = {
   updateApply: { zh: "安装并重启 / Install & Restart", en: "Install & Restart" },
   updateRetry: { zh: "重试 / Retry", en: "Retry" },
   updateRestarting: { zh: "正在重启应用...", en: "Restarting app..." },
+  updateMajor: { zh: "大版本更新", en: "Major update" },
+  updateMajorHint: {
+    zh: "这是大版本更新，请下载安装器并手动运行。安装后会刷新内置 FFmpeg。",
+    en: "This is a major update. Download and run the installer manually; it refreshes the bundled FFmpeg.",
+  },
+  updateDownloadInstaller: { zh: "下载安装器 / Download Installer", en: "Download Installer" },
   updateCheckBtn: { zh: "检查更新", en: "Check Update" },
   // Format convert
   inputSource: { zh: "输入源 / Input Source", en: "Input Source" },

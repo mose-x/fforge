@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { CheckUpdate, DownloadUpdate, ApplyUpdate, GetAppInfo } from "../wailsjs/go/main/App";
-import { EventsOn } from "../wailsjs/runtime/runtime";
+import { EventsOn, BrowserOpenURL } from "../wailsjs/runtime/runtime";
 import type { main } from "../wailsjs/go/models";
 import { useStore } from "../store/useStore";
 import { t, pick } from "../lib/i18n";
@@ -14,7 +14,15 @@ import {
   X,
 } from "lucide-react";
 
-type Stage = "idle" | "checking" | "available" | "downloading" | "ready" | "error" | "latest";
+type Stage =
+  | "idle"
+  | "checking"
+  | "available"
+  | "downloading"
+  | "ready"
+  | "error"
+  | "latest"
+  | "manual";
 
 export function UpdateDialog({ onClose }: { onClose: () => void }) {
   const { lang, toast } = useStore();
@@ -43,7 +51,9 @@ export function UpdateDialog({ onClose }: { onClose: () => void }) {
     try {
       const info = await CheckUpdate();
       setUpdateInfo(info);
-      if (info.hasUpdate) {
+      if (info.hasUpdate && info.manualInstall) {
+        setStage("manual");
+      } else if (info.hasUpdate) {
         setStage("available");
       } else {
         setStage("latest");
@@ -139,6 +149,34 @@ export function UpdateDialog({ onClose }: { onClose: () => void }) {
             >
               <Download size={16} />
               {pick(t.updateDownload, lang)}
+            </button>
+          </div>
+        )}
+
+        {/* Manual (major-version) install */}
+        {stage === "manual" && updateInfo && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-foreground">
+              <AlertCircle size={20} className="text-amber-500" />
+              <span>
+                {pick(t.updateMajor, lang)}:{" "}
+                <span className="font-semibold text-amber-500">v{updateInfo.latestVersion}</span>
+              </span>
+            </div>
+            {updateInfo.changelog && (
+              <div className="rounded-lg border border-border bg-background p-3 max-h-40 overflow-auto">
+                <pre className="text-xs text-muted whitespace-pre-wrap font-mono">
+                  {updateInfo.changelog}
+                </pre>
+              </div>
+            )}
+            <p className="text-sm text-muted">{pick(t.updateMajorHint, lang)}</p>
+            <button
+              onClick={() => BrowserOpenURL(updateInfo.installerUrl)}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-white font-medium hover:bg-amber-700 transition-colors"
+            >
+              <Download size={16} />
+              {pick(t.updateDownloadInstaller, lang)}
             </button>
           </div>
         )}
