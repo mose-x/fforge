@@ -56,6 +56,9 @@ interface AppState {
   // update dialog
   showUpdate: boolean;
   setShowUpdate: (v: boolean) => void;
+  // settings dialog
+  showSettings: boolean;
+  setShowSettings: (v: boolean) => void;
 }
 
 let progressBound = false;
@@ -72,6 +75,7 @@ export const useStore = create<AppState>((set, get) => ({
   progress: null,
   running: false,
   showUpdate: false,
+  showSettings: false,
 
   init: () => {
     // Apply initial theme class to <html>
@@ -146,4 +150,5 @@ export const useStore = create<AppState>((set, get) => ({
   },
   dismissToast: (id) => set({ toasts: get().toasts.filter((x) => x.id !== id) }),
   setShowUpdate: (showUpdate) => set({ showUpdate }),
+  setShowSettings: (showSettings) => set({ showSettings }),
 }));
