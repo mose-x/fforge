@@ -12,6 +12,7 @@ frontend/package.json.md5
 /fforge
 
 # dependencies
+/node_modules/
 frontend/node_modules/
 
 # editor / OS

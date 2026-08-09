@@ -1,0 +1,14 @@
+{
+  "name": "fforge",
+  "private": true,
+  "description": "Root package: local lint/format tooling for the code-hooks nodejs stage (prettier + eslint run at the repo root). CI does not use this; CI installs and builds in frontend/.",
+  "scripts": {
+    "test": "echo no-frontend-tests"
+  },
+  "devDependencies": {
+    "eslint": "^10.8.0",
+    "prettier": "3.4.2",
+    "typescript": "5.6.3",
+    "typescript-eslint": "^8.65.0"
+  }
+}
