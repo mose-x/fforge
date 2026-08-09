@@ -68,6 +68,30 @@ export const t = {
   },
   updateDownloadInstaller: { zh: "下载安装器 / Download Installer", en: "Download Installer" },
   updateCheckBtn: { zh: "检查更新", en: "Check Update" },
+  // Settings dialog
+  settingsProxy: { zh: "代理", en: "Proxy" },
+  proxyEnabled: { zh: "启用代理", en: "Enable proxy" },
+  proxySystem: { zh: "系统代理", en: "System proxy" },
+  proxyCustom: { zh: "自定义", en: "Custom" },
+  proxyUrl: { zh: "代理地址", en: "Proxy address" },
+  proxyProtocol: { zh: "协议", en: "Protocol" },
+  proxyCheckBaidu: { zh: "百度", en: "Baidu" },
+  proxyCheckGoogle: { zh: "Google", en: "Google" },
+  proxyCheckSuccess: { zh: "{{target}} 连接成功", en: "{{target}} connection successful" },
+  proxyCheckFail: {
+    zh: "{{target}} 连接失败: {{error}}",
+    en: "{{target}} connection failed: {{error}}",
+  },
+  proxyUrlRequired: {
+    zh: "请先填写代理地址，否则将直连目标",
+    en: "Please enter a proxy address first, otherwise the target will be reached directly",
+  },
+  githubMirror: { zh: "GitHub 镜像", en: "GitHub Mirror" },
+  githubMirrorDesc: {
+    zh: "下载 GitHub 资源时使用的镜像（留空则不替换）",
+    en: "Mirror used when downloading GitHub assets (empty = no replacement)",
+  },
+  settingsSaved: { zh: "设置已保存", en: "Settings saved" },
   // Format convert
   inputSource: { zh: "输入源 / Input Source", en: "Input Source" },
   sourceInfo: { zh: "源文件信息 / Source info", en: "Source info" },

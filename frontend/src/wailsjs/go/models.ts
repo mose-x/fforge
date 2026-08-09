@@ -282,3 +282,41 @@ export namespace main {
     }
   }
 }
+
+export namespace config {
+  export class ProxySettings {
+    enabled: boolean;
+    mode: string;
+    url: string;
+    protocol: string;
+
+    static createFrom(source: any = {}) {
+      return new ProxySettings(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.enabled = source["enabled"];
+      this.mode = source["mode"];
+      this.url = source["url"];
+      this.protocol = source["protocol"];
+    }
+  }
+
+  export class AppSettings {
+    proxy: ProxySettings;
+    githubMirror: string;
+    downloadThreads: number;
+
+    static createFrom(source: any = {}) {
+      return new AppSettings(source);
+    }
+
+    constructor(source: any = {}) {
+      if ("string" === typeof source) source = JSON.parse(source);
+      this.proxy = ProxySettings.createFrom(source["proxy"] || {});
+      this.githubMirror = source["githubMirror"];
+      this.downloadThreads = source["downloadThreads"];
+    }
+  }
+}

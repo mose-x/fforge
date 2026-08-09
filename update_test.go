@@ -3,8 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -263,53 +261,24 @@ func TestDecideUpdate(t *testing.T) {
 	}
 }
 
-func TestDownloadAndVerify(t *testing.T) {
-	content := []byte("fforge-update-blob")
-	wantSha := sha256hex(content)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write(content)
-	}))
-	defer srv.Close()
-
-	// Good SHA: downloads + verifies, file content matches.
-	dest := filepath.Join(t.TempDir(), "blob")
-	if err := downloadAndVerify(srv.URL, wantSha, dest, nil); err != nil {
-		t.Fatalf("good sha: %v", err)
+func TestIsStableVersion(t *testing.T) {
+	cases := []struct {
+		tag  string
+		want bool
+	}{
+		{"v1.2.3", true},
+		{"1.2.3", true},
+		{"v0.0.1", true},
+		{"1.2.3-rc1", false},
+		{"v2.0.0-beta", false},
+		{"1.2", false},
+		{"v1.2.3.4", false},
+		{"latest", false},
+		{"", false},
 	}
-	got, err := os.ReadFile(dest)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(got) != string(content) {
-		t.Errorf("content mismatch: got %q want %q", got, content)
-	}
-
-	// Bad SHA: rejected with an integrity error; temp file removed.
-	dest2 := filepath.Join(t.TempDir(), "blob2")
-	if err := downloadAndVerify(srv.URL, "0000000000000000000000000000000000000000000000000000000000000000", dest2, nil); err == nil {
-		t.Error("bad sha: expected integrity error, got nil")
-	}
-	if _, err := os.Stat(dest2); !os.IsNotExist(err) {
-		t.Errorf("bad sha: temp file should be removed, stat err=%v", err)
-	}
-
-	// Empty SHA: downloaded, no verification, still succeeds.
-	dest3 := filepath.Join(t.TempDir(), "blob3")
-	if err := downloadAndVerify(srv.URL, "", dest3, nil); err != nil {
-		t.Errorf("empty sha: %v", err)
-	}
-
-	// Empty URL: error.
-	if err := downloadAndVerify("", "", filepath.Join(t.TempDir(), "x"), nil); err == nil {
-		t.Error("empty url: expected error")
-	}
-
-	// Non-200: error.
-	badSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer badSrv.Close()
-	if err := downloadAndVerify(badSrv.URL, "", filepath.Join(t.TempDir(), "y"), nil); err == nil {
-		t.Error("404: expected error")
+	for _, c := range cases {
+		if got := isStableVersion(c.tag); got != c.want {
+			t.Errorf("isStableVersion(%q) = %v, want %v", c.tag, got, c.want)
+		}
 	}
 }

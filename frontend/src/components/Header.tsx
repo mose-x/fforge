@@ -4,7 +4,7 @@ import { t, pick } from "../lib/i18n";
 import type { Lang } from "../lib/i18n";
 
 export function Header() {
-  const { theme, lang, toggleTheme, setLang, toast, setShowUpdate } = useStore();
+  const { theme, lang, toggleTheme, setLang, toast, setShowUpdate, setShowSettings } = useStore();
 
   return (
     <header className="h-14 shrink-0 border-b border-border px-5 flex items-center justify-between bg-card drag-region">
@@ -72,7 +72,7 @@ export function Header() {
         <button
           className="h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center"
           aria-label={pick(t.settings, lang)}
-          onClick={() => toast(lang === "zh" ? "设置面板即将推出" : "Settings panel coming soon")}
+          onClick={() => setShowSettings(true)}
         >
           <Settings className="w-[18px] h-[18px]" />
         </button>

@@ -65,3 +65,15 @@ export function SelectOutputPath(arg1) {
 export function SelectSubtitleFile() {
   return window["go"]["main"]["App"]["SelectSubtitleFile"]();
 }
+
+export function CheckProxy(arg1) {
+  return window["go"]["main"]["App"]["CheckProxy"](arg1);
+}
+
+export function GetSettings() {
+  return window["go"]["main"]["App"]["GetSettings"]();
+}
+
+export function SaveSettings(arg1) {
+  return window["go"]["main"]["App"]["SaveSettings"](arg1);
+}

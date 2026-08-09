@@ -8,9 +8,12 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 	"time"
+
+	"fforge/internal/downloader"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -24,8 +27,7 @@ type AppInfo struct {
 	UpdateURL string `json:"updateUrl"`
 }
 
-// GitHubRelease models the relevant fields of the GitHub Releases API
-// response (GET /repos/{owner}/{repo}/releases/latest).
+// GitHubRelease models the relevant fields of a GitHub Releases API response.
 type GitHubRelease struct {
 	TagName string        `json:"tag_name"`
 	Body    string        `json:"body"`
@@ -86,22 +88,48 @@ func (a *App) GetAppInfo() AppInfo {
 	return a.appInfo
 }
 
-// CheckUpdate queries the GitHub Releases API for a newer version. It does
-// the HTTP fetch + parse, then delegates the per-platform decision to
+// stableVersionReg matches a pure X.Y.Z version (exactly three numeric
+// components, digits + dots only, no pre-release suffix like -rc1/-beta).
+// Only releases whose tag (minus the leading "v") matches are valid update
+// targets; suffixed/pre-release tags are skipped so the updater never offers a
+// non-stable build to users. This is the client-side guard; build.yml marks
+// suffixed tags as GitHub pre-releases (excluded from /releases/latest) as the
+// server-side guard.
+var stableVersionReg = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
+
+// isStableVersion reports whether tag (with or without a leading "v") is a pure
+// X.Y.Z stable release (no -rc/-beta/... suffix). Pure-logic, unit-tested.
+func isStableVersion(tag string) bool {
+	return stableVersionReg.MatchString(strings.TrimPrefix(tag, "v"))
+}
+
+// CheckUpdate queries the GitHub Releases API for a newer stable version. It
+// uses the configured proxy (so it works behind the GFW), fetches the releases
+// LIST (newest first) and skips any tag that isn't a pure X.Y.Z (so rc/beta
+// tags are never offered), then delegates the per-platform decision to
 // decideUpdate (network-free, unit-tested across all platform combos).
 func (a *App) CheckUpdate() (UpdateInfo, error) {
 	if a.appInfo.UpdateURL == "" {
 		return UpdateInfo{}, fmt.Errorf("update URL is not configured")
 	}
 
-	client := &http.Client{Timeout: 15 * time.Second}
+	client := downloader.BuildClient(a.getProxyConfig())
+	client.Timeout = 15 * time.Second
 
-	req, err := http.NewRequest(http.MethodGet, a.appInfo.UpdateURL, nil)
+	// Derive the releases-list URL by stripping the trailing "/latest" from
+	// about.json's updateUrl (which ends in /latest) so no config change is
+	// needed. per_page=30 is enough to find the newest stable even if a few
+	// rc/beta releases were published in between.
+	listURL := strings.TrimSuffix(a.appInfo.UpdateURL, "/latest")
+	req, err := http.NewRequest(http.MethodGet, listURL, nil)
 	if err != nil {
 		return UpdateInfo{}, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("User-Agent", "fforge")
+	q := req.URL.Query()
+	q.Set("per_page", "30")
+	req.URL.RawQuery = q.Encode()
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -113,13 +141,30 @@ func (a *App) CheckUpdate() (UpdateInfo, error) {
 		return UpdateInfo{}, fmt.Errorf("update server returned status %d", resp.StatusCode)
 	}
 
-	var release GitHubRelease
-	if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+	var releases []GitHubRelease
+	if err := json.NewDecoder(resp.Body).Decode(&releases); err != nil {
 		return UpdateInfo{}, fmt.Errorf("failed to parse release info: %w", err)
 	}
 
-	return decideUpdate(a.appInfo.Version, release, runtime.GOOS, runtime.GOARCH, func(name string) string {
-		return fetchAssetSha256(client, release.Assets, name)
+	// Pick the newest release whose tag is a pure X.Y.Z. Releases come back
+	// newest-first, so the first match is the latest stable.
+	var release *GitHubRelease
+	for i := range releases {
+		if isStableVersion(releases[i].TagName) {
+			release = &releases[i]
+			break
+		}
+	}
+	if release == nil {
+		// No pure-numeric release among the recent ones (e.g. only rc builds
+		// published). Treat as "no stable update available" rather than an
+		// error: the user is current with respect to stable releases.
+		return UpdateInfo{HasUpdate: false}, nil
+	}
+
+	rel := *release
+	return decideUpdate(a.appInfo.Version, rel, runtime.GOOS, runtime.GOARCH, func(name string) string {
+		return fetchAssetSha256(client, rel.Assets, name)
 	})
 }
 
@@ -274,7 +319,9 @@ func majorVersion(v string) int {
 	return n
 }
 
-// fetchAssetSha256 downloads sha256sums.txt and returns the hash for filename.
+// fetchAssetSha256 downloads sha256sums.txt (via the proxy-aware client) and
+// returns the hash recorded for filename. Empty string if the manifest is
+// missing or the file isn't listed — DownloadUpdate then skips verification.
 func fetchAssetSha256(client *http.Client, assets []GitHubAsset, filename string) string {
 	var sumsURL string
 	for _, a := range assets {
@@ -314,110 +361,63 @@ func parseSha256Sum(body, filename string) string {
 	return ""
 }
 
-// DownloadUpdate fetches the new binary to a temp path and verifies SHA256.
+// DownloadUpdate fetches the new binary to a temp path through the configured
+// proxy (+ GitHub mirror) via the multi-threaded downloader, then verifies
+// the SHA-256 if one was published. The downloader closes the file before
+// returning, so a failed SHA check can os.Remove it (Windows can't delete an
+// open file).
 func (a *App) DownloadUpdate(downloadURL, expectedSha256 string) error {
-	return downloadAndVerify(downloadURL, expectedSha256, getUpdateFilePath(), a.emitUpdateProgress)
-}
-
-// downloadAndVerify downloads url to destPath and, if expectedSha is
-// non-empty, verifies the downloaded file's SHA-256 matches. cb receives
-// progress updates (may be nil). Extracted from DownloadUpdate so the
-// download+verify loop is unit-testable with an httptest server + temp dir.
-func downloadAndVerify(url, expectedSha, destPath string, cb func(UpdateProgress)) error {
-	if url == "" {
+	if downloadURL == "" {
 		return fmt.Errorf("download URL is empty")
 	}
-	os.Remove(destPath)
+	downloadURL = a.applyGithubMirror(downloadURL)
 
-	resp, err := http.Get(url)
+	tmpPath := getUpdateFilePath()
+	os.Remove(tmpPath)
+
+	proxyCfg := a.getProxyConfig()
+	threads := a.settings.Get().DownloadThreads
+	if threads <= 0 {
+		threads = 4
+	}
+
+	err := a.downloader.Download(a.ctx, downloadURL, tmpPath, func(downloaded, total, speed int64) {
+		percent := 0
+		if total > 0 {
+			percent = int(downloaded * 100 / total)
+		}
+		msg := "Downloading..."
+		if total > 0 {
+			msg = fmt.Sprintf("Downloading %.1fMB / %.1fMB", float64(downloaded)/(1024*1024), float64(total)/(1024*1024))
+		}
+		a.emitUpdateProgress(UpdateProgress{
+			Stage:            "downloading",
+			Percent:          percent,
+			DownloadedBytes:  downloaded,
+			TotalBytes:       total,
+			SpeedBytesPerSec: speed,
+			Message:          msg,
+		})
+	}, proxyCfg, threads)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download server returned status %d", resp.StatusCode)
-	}
+	a.emitUpdateProgress(UpdateProgress{Stage: "verifying", Percent: 100, Message: "Verifying integrity..."})
 
-	total := resp.ContentLength
-	out, err := os.Create(destPath)
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
-	}
-	// out is closed explicitly after the write loop (not deferred) so that a
-	// failed SHA check can os.Remove(destPath) — Windows refuses to delete an
-	// open file. closeAndRemove covers mid-write error paths.
-	closeAndRemove := func() {
-		out.Close()
-		os.Remove(destPath)
-	}
-
-	buf := make([]byte, 32*1024)
-	var downloaded int64
-	lastEmit := time.Now()
-	emit := func(p UpdateProgress) {
-		if cb != nil {
-			cb(p)
-		}
-	}
-	for {
-		n, readErr := resp.Body.Read(buf)
-		if n > 0 {
-			if _, werr := out.Write(buf[:n]); werr != nil {
-				closeAndRemove()
-				return fmt.Errorf("write failed: %w", werr)
-			}
-			downloaded += int64(n)
-			if time.Since(lastEmit) > 200*time.Millisecond {
-				percent := 0
-				if total > 0 {
-					percent = int(downloaded * 100 / total)
-				}
-				msg := "Downloading..."
-				if total > 0 {
-					msg = fmt.Sprintf("Downloading %.1fMB / %.1fMB", float64(downloaded)/(1024*1024), float64(total)/(1024*1024))
-				}
-				emit(UpdateProgress{
-					Stage:           "downloading",
-					Percent:         percent,
-					DownloadedBytes: downloaded,
-					TotalBytes:      total,
-					Message:         msg,
-				})
-				lastEmit = time.Now()
-			}
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			closeAndRemove()
-			return fmt.Errorf("download read error: %w", readErr)
-		}
-	}
-
-	// Close the downloaded file before verification so a failed check can
-	// remove it on Windows (open files can't be deleted there).
-	if err := out.Close(); err != nil {
-		os.Remove(destPath)
-		return fmt.Errorf("failed to close temp file: %w", err)
-	}
-
-	emit(UpdateProgress{Stage: "verifying", Percent: 100, Message: "Verifying integrity..."})
-
-	if expectedSha != "" {
-		actual, err := sha256OfFile(destPath)
+	if expectedSha256 != "" {
+		actual, err := sha256OfFile(tmpPath)
 		if err != nil {
-			os.Remove(destPath)
+			os.Remove(tmpPath)
 			return fmt.Errorf("failed to hash downloaded file: %w", err)
 		}
-		if actual != expectedSha {
-			os.Remove(destPath)
-			return fmt.Errorf("integrity check failed: expected %s, got %s", expectedSha, actual)
+		if actual != expectedSha256 {
+			os.Remove(tmpPath)
+			return fmt.Errorf("integrity check failed: expected %s, got %s", expectedSha256, actual)
 		}
 	}
 
-	emit(UpdateProgress{Stage: "done", Percent: 100, Message: "Download complete"})
+	a.emitUpdateProgress(UpdateProgress{Stage: "done", Percent: 100, Message: "Download complete"})
 	return nil
 }
 
