@@ -5,9 +5,27 @@ import { useStore } from "../store/useStore";
 import { t, pick } from "../lib/i18n";
 import { X, Settings, Globe, Loader2 } from "lucide-react";
 
+// Local structural types for the settings state. Using interfaces (not the
+// generated `config.AppSettings`/`ProxySettings` classes) lets the optimistic
+// spread updates ({...settings, proxy: {...settings.proxy, ...p}}) type-check
+// cleanly even after `wails build` regenerates models.ts (a plain object is
+// always assignable to an interface, but not always to a generated class).
+// Casts at the Wails boundary (GetSettings/SaveSettings) bridge interface<->class.
+interface ProxyState {
+  enabled: boolean;
+  mode: string;
+  url: string;
+  protocol: string;
+}
+interface SettingsState {
+  proxy: ProxyState;
+  githubMirror: string;
+  downloadThreads: number;
+}
+
 export function SettingsDialog({ onClose }: { onClose: () => void }) {
   const { lang, toast } = useStore();
-  const [settings, setSettings] = useState<config.AppSettings | null>(null);
+  const [settings, setSettings] = useState<SettingsState | null>(null);
   const [checking, setChecking] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -32,13 +50,13 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
     );
   }
 
-  const save = (next: config.AppSettings) => {
+  const save = (next: SettingsState) => {
     setSettings(next);
-    SaveSettings(next)
+    SaveSettings(next as unknown as config.AppSettings)
       .then(() => toast(pick(t.settingsSaved, lang), "success"))
       .catch((e: unknown) => toast(e instanceof Error ? e.message : String(e), "error"));
   };
-  const patchProxy = (p: Partial<config.ProxySettings>) =>
+  const patchProxy = (p: Partial<ProxyState>) =>
     save({ ...settings, proxy: { ...settings.proxy, ...p } });
 
   const checkProxy = async (target: string, label: string) => {
