@@ -46,6 +46,17 @@ cp "$FFMPEG_BIN" build/bin/ffmpeg.exe
 cp "$FFPROBE_BIN" build/bin/ffprobe.exe
 echo "FFmpeg downloaded: $(ls -la build/bin/ffmpeg.exe build/bin/ffprobe.exe)"
 
+# --- Generate Windows resources (icon + version info) -> resource.syso, so the
+# Go linker embeds them into fforge.exe (icon shows in Explorer/taskbar).
+# go-winres reads winres/winres.json (RT_GROUP_ICON -> build/windows/icon.ico +
+# RT_VERSION). Without this the .exe has no icon resource. Install go-winres
+# (lands in GOPATH/bin alongside wails, already on PATH).
+go install github.com/tc-hib/go-winres@latest
+go-winres make --arch "$ARCH" --out resource --no-suffix
+if [ -e resource ] && [ ! -e resource.syso ]; then
+  mv resource resource.syso
+fi
+
 # --- Build the bare .exe (self-update asset; CGO-free).
 wails build -nopackage -platform "windows/$ARCH" -o fforge.exe
 # Wails appends the arch suffix when cross-compiling; normalize to the plain

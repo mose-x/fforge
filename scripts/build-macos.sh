@@ -77,6 +77,21 @@ chmod +x "$RES/ffmpeg" "$RES/ffprobe"
 codesign --remove-signature "$APP" 2>/dev/null || true
 codesign --remove-signature "$APP/Contents/MacOS/fforge" 2>/dev/null || true
 
+# --- Apply a multi-resolution .icns to the .app (Dock/Launchpad readability)
+# from build/appicon.png. Wails generates a default iconfile.icns; this
+# overwrites it so the icon is crisp at all sizes.
+ICONSET="$(mktemp -d)/icon.iconset"
+mkdir -p "$ICONSET"
+SRC="build/appicon.png"
+for sz in 16 32 64 128 256 512; do
+  sips -z $sz $sz "$SRC" --out "$ICONSET/icon_${sz}x${sz}.png" >/dev/null
+  sips -z $((sz*2)) $((sz*2)) "$SRC" --out "$ICONSET/icon_${sz}x${sz}@2x.png" >/dev/null
+done
+sips -z 1024 1024 "$SRC" --out "$ICONSET/icon_512x512@2x.png" >/dev/null
+ICNS="$(dirname "$ICONSET")/iconfile.icns"
+iconutil -c icns "$ICONSET" -o "$ICNS"
+cp "$ICNS" "$APP/Contents/Resources/iconfile.icns"
+
 # --- Create a drag-to-Applications DMG with a white background + install hints.
 command -v create-dmg >/dev/null 2>&1 || brew install create-dmg
 python3 -m venv /tmp/fforge-dmgvenv
