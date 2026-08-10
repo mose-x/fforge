@@ -91,6 +91,14 @@ cp "$FFMPEG_BIN" "$STAGING/lib/fforge/ffmpeg"
 cp "$FFPROBE_BIN" "$STAGING/lib/fforge/ffprobe"
 chmod +x "$STAGING/lib/fforge/ffmpeg" "$STAGING/lib/fforge/ffprobe"
 
+# --- hicolor icons so the .desktop Icon=fforge resolves in application launchers.
+SRC_ICON="build/appicon.png"
+for sz in 16 32 48 64 128 256 512; do
+  d="$STAGING/share/icons/hicolor/${sz}x${sz}/apps"
+  mkdir -p "$d"
+  python3 -c "from PIL import Image; Image.open('$SRC_ICON').resize(($sz,$sz), Image.LANCZOS).save('$d/fforge.png')"
+done
+
 fpm -s dir -t deb \
   -n fforge -v "${VERSION}" -a "${DEB_ARCH}" \
   --depends libgtk-3-0 \
