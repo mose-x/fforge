@@ -20,6 +20,7 @@ artifacts in both environments. Each script downloads FFmpeg, bumps
 | `build-macos.sh` | macOS (amd64/arm64) | `.dmg` + `.bin` (self-update) |
 | `build-macos-local.sh` | macOS (local MDM build) | same as above, with `-skipbindings` |
 | `build-linux.sh` | Linux (amd64/arm64) | bare binary + `.deb` + `.rpm` |
+| `run-first-installed-local-mac.sh` | macOS (post-install fix) | strips sig + re-stamps quarantine |
 
 Asset naming: `fforge-<version>-<os>-<x64|arm64><ext>` — the same pattern the
 in-app updater's `matchPlatformAsset` / `matchPlatformInstallerAsset` selects on.
@@ -82,7 +83,23 @@ in-app updater's `matchPlatformAsset` / `matchPlatformInstallerAsset` selects on
 CI 和本地构建用**同一套脚本**，产物逐字节一致。唯一区别：CI runner 不需要代理（在 GFW 外），本地 Windows 需要 Clash 代理。
 
 ## macOS first-launch / macOS 首次启动
-The DMG bundles an ad-hoc-signed `.app`. If macOS says "damaged" after dragging
-to /Applications, run: `xattr -cr "/Applications/fforge.app"`. This is the
-open-source-unsigned-app bypass; the DMG background documents it.
-DMG 里是 ad-hoc 签名的 `.app`。拖到 /Applications 后若 macOS 提示“已损坏”，运行：`xattr -cr "/Applications/fforge.app"`。这是开源未签名应用的旁路，DMG 背景图也有说明。
+
+The DMG bundles an **unsigned** `.app` (the build strips Wails' ad-hoc signature
+so it launches under Gatekeeper instead of being "damaged" + SIGKILL'd on strict
+MDM). After dragging to /Applications, launch it via **right-click → Open →
+"Open"** (the Gatekeeper bypass for unsigned apps) — shown on the DMG background
+in red. Do NOT use `xattr -cr` (it strips quarantine and routes MDM users back to
+the provenance path that kills unsigned binaries).
+
+For a **locally-built** DMG under MDM that still won't launch, run the
+first-launch fix (strips signatures + re-stamps a clean quarantine so it routes
+through Gatekeeper's right-click → Open bypass):
+```bash
+chmod +x scripts/run-first-installed-local-mac.sh
+./scripts/run-first-installed-local-mac.sh   # after dragging fforge to /Applications
+```
+
+DMG 里是**未签名**的 `.app`（构建时扒掉了 Wails 的 ad-hoc 签名，走 Gatekeeper 而不是在严格 MDM 下"已损坏"/SIGKILL）。拖到 /Applications 后用**右键 → 打开 → "打开"**启动（未签名应用的 Gatekeeper 旁路，DMG 背景红字有写）。**不要用 `xattr -cr`**（扒掉 quarantine → provenance 路径 → 杀掉未签名二进制）。
+
+**本地构建**的 DMG 在 MDM 下仍启动不了时，跑首次启动修复脚本（扒签名 + 重打干净 quarantine → 走右键打开旁路）：
+`./scripts/run-first-installed-local-mac.sh`（先把 fforge 拖到 /Applications）。

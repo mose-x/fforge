@@ -59,18 +59,23 @@ WAILS_FLAGS=""
 [ "${FFORGE_SKIP_BINDINGS:-0}" = "1" ] && WAILS_FLAGS="-skipbindings"
 wails build $WAILS_FLAGS -platform "darwin/$ARCH" -o fforge
 
-# --- Copy FFmpeg into the .app bundle so the app resolves them at runtime;
-# the subsequent codesign --deep signs them too.
+# --- Copy FFmpeg into the .app bundle so the app resolves them at runtime.
 RES="$APP/Contents/Resources"
 mkdir -p "$RES"
 cp "$FFMPEG_BIN" "$RES/ffmpeg"
 cp "$FFPROBE_BIN" "$RES/ffprobe"
 chmod +x "$RES/ffmpeg" "$RES/ffprobe"
 
-# --- Ad-hoc sign the .app (open-source release is unsigned; this lets it run
-# on non-MDM macs after the user right-clicks -> Open). See scripts/README.md.
-codesign --force --deep --sign - "$APP"
-codesign --verify --verbose=1 "$APP"
+# --- Strip the ad-hoc signature Wails/Go applies to the .app. An ad-hoc-signed
+# .app under Gatekeeper (browser quarantine) shows "damaged" with no
+# right-click -> Open bypass. Strip BOTH the bundle signature AND the inner
+# executable's ad-hoc: removing only the bundle seal while leaving the inner
+# binary ad-hoc-signed leaves a signature mismatch that Gatekeeper still
+# rejects. The arm64 kernel re-applies an ad-hoc signature to the inner binary
+# at exec time, so stripping it is safe (the binary still runs). See
+# scripts/README.md + the macOS self-update signature caveat in AGENTS.md.
+codesign --remove-signature "$APP" 2>/dev/null || true
+codesign --remove-signature "$APP/Contents/MacOS/fforge" 2>/dev/null || true
 
 # --- Create a drag-to-Applications DMG with a white background + install hints.
 command -v create-dmg >/dev/null 2>&1 || brew install create-dmg
@@ -99,13 +104,17 @@ title_font = load_font(24)
 hint_font = load_font(14)
 small_font = load_font(12)
 cx = w / 2
+RED = (200, 0, 0, 255)
 draw.text((cx, 40), "fforge", fill=(30, 30, 46, 255), font=title_font, anchor="mm")
 draw.text((cx, 130), "Drag the app icon to the Applications folder on the right",
           fill=(90, 90, 90, 255), font=hint_font, anchor="mm")
-draw.text((cx, 300), 'If macOS says "damaged", open Terminal and run:',
-          fill=(120, 120, 120, 255), font=small_font, anchor="mm")
-draw.text((cx, 330), 'xattr -cr "/Applications/fforge.app"',
-          fill=(40, 40, 40, 255), font=hint_font, anchor="mm")
+# Security hint in RED: the correct unsigned-app bypass is Right-click -> Open,
+# NOT `xattr -cr` (which strips quarantine and routes MDM users back to the
+# provenance path that SIGKILLs unsigned binaries).
+draw.text((cx, 290), 'If macOS says "cannot be opened":',
+          fill=RED, font=small_font, anchor="mm")
+draw.text((cx, 320), 'Right-click the app  ->  Open  ->  "Open"',
+          fill=RED, font=hint_font, anchor="mm")
 img.save(os.environ["BG_PATH"])
 PYEOF
 DMG_NAME="fforge-${VERSION}-macos-${ASSET_ARCH}.dmg"
@@ -124,6 +133,13 @@ create-dmg \
 if [ ! -f "build/bin/${DMG_NAME}" ]; then
   hdiutil create -volname "fforge" -srcfolder "$APP" -ov -format UDZO "build/bin/${DMG_NAME}"
 fi
+
+# --- Stamp the DMG with com.apple.quarantine so a drag-installed .app inherits
+# it and launches via Gatekeeper (right-click -> Open), not the provenance path
+# that SIGKILLs unsigned binaries under MDM. Browser-downloaded DMGs get
+# quarantine automatically; this covers locally-built / non-browser DMGs.
+xattr -w com.apple.quarantine "0083;00000000;fforge;|com.mose-x.fforge" \
+  "build/bin/${DMG_NAME}" 2>/dev/null || true
 
 # --- Extract the bare inner binary for in-app self-update (ApplyUpdate swaps
 # the executable inside the existing .app bundle, not the bundle itself).
