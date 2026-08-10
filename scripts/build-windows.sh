@@ -67,7 +67,10 @@ INSTALLER_NAME="fforge-${VERSION}-windows-${ASSET_ARCH}-installer.exe"
 # MSYS_NO_PATHCONV=1 stops Git Bash from mangling makensis /D flags into Unix
 # paths (e.g. /DVERSION -> D:/VERSION). CI sets it in the step env; set it here
 # so local Git Bash runs match CI.
-SRCDIR="$(pwd)/build/bin"
+# SRCDIR must be a WINDOWS path (backslashes) because makensis/NSIS is a native
+# Windows tool and `File "${SRCDIR}\..."` won't resolve an MSYS path like
+# /d/a/... — cygpath -w converts $(pwd) (MSYS) to D:\... .
+SRCDIR="$(cygpath -w "$(pwd)/build/bin")"
 MSYS_NO_PATHCONV=1 makensis \
   /DVERSION="${VERSION}" /DASSET_ARCH="${ASSET_ARCH}" /DSRCDIR="${SRCDIR}" \
   build/windows/installer.nsi
