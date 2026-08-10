@@ -1,0 +1,9 @@
+# Wails-generated bindings: wails owns their format (tabs, convertValues),
+# so prettier must not reformat them. Without this, the pre-commit nodejs stage
+# (`npx prettier --check`) rejects the wails-generated files after
+# `wails generate module` / `wails build` regenerates them.
+frontend/src/wailsjs/
+
+# build output + deps
+frontend/dist/
+**/node_modules/
