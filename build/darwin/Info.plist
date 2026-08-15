@@ -9,7 +9,7 @@
   <key>CFBundleIconFile</key>
   <string>iconfile</string>
   <key>CFBundleIdentifier</key>
-  <string>com.ffmpegstudio.app</string>
+  <string>com.mose-x.fforge</string>
   <key>CFBundleName</key>
   <string>{{.Name}}</string>
   <key>CFBundlePackageType</key>
