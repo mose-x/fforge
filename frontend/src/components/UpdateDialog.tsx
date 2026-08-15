@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { CheckUpdate, DownloadUpdate, ApplyUpdate, GetAppInfo } from "../wailsjs/go/main/App";
 import { EventsOn, BrowserOpenURL } from "../wailsjs/runtime/runtime";
 import type { main } from "../wailsjs/go/models";
+import type { UpdateProgress } from "../lib/types";
 import { useStore } from "../store/useStore";
 import { t, pick } from "../lib/i18n";
 import {
@@ -36,7 +37,7 @@ export function UpdateDialog({ onClose }: { onClose: () => void }) {
     GetAppInfo()
       .then((info) => setAppInfo(info))
       .catch(() => {});
-    const off = EventsOn("update:progress", (p: any) => {
+    const off = EventsOn("update:progress", (p: UpdateProgress) => {
       setProgress({ percent: p.percent || 0, message: p.message || "" });
       if (p.stage === "done") {
         setStage("ready");
@@ -173,7 +174,9 @@ export function UpdateDialog({ onClose }: { onClose: () => void }) {
             )}
             <p className="text-sm text-muted">{pick(t.updateMajorHint, lang)}</p>
             <button
-              onClick={() => BrowserOpenURL(updateInfo.installerUrl)}
+              onClick={() => {
+                if (updateInfo.installerUrl) BrowserOpenURL(updateInfo.installerUrl);
+              }}
               className="w-full flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-white font-medium hover:bg-amber-700 transition-colors"
             >
               <Download size={16} />

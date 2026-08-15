@@ -469,8 +469,6 @@ export function buildMergeCommand(s: MergeSettings): CommandResult {
     tokens.push({ type: "flag", text: "-c" }, { type: "val", text: "copy" });
     breakdown.push({ flag: "-c copy", desc: "流复制不重编码 / Stream copy, no re-encode" });
   } else {
-    let vi = 0;
-    let ai = 0;
     for (const n of names) {
       args.push("-i", n);
       tokens.push({ type: "flag", text: "-i" }, { type: "file", text: n });
@@ -717,9 +715,10 @@ export function buildSubtitleCommand(s: SubtitleSettings): CommandResult {
     tokens.push({ type: "flag", text: "-i" }, { type: "file", text: s.inputName });
     breakdown.push({ flag: `-i ${s.inputName}`, desc: "输入视频 / Video input" });
 
-    const stylePart = s.forceStyle ? `:force_style='${s.forceStyle}'` : "";
+    const escFile = s.subtitleFile.replace(/'/g, "'\\''");
+    const stylePart = s.forceStyle ? `:force_style='${s.forceStyle.replace(/'/g, "'\\''")}'` : "";
     const encPart = s.encoding !== "UTF-8" ? `:charenc=${s.encoding.toLowerCase()}` : "";
-    const filter = `subtitles='${s.subtitleFile}'${encPart}${stylePart}`;
+    const filter = `subtitles='${escFile}'${encPart}${stylePart}`;
     args.push("-vf", filter);
     tokens.push(
       { type: "flag", text: "-vf" },
@@ -969,12 +968,12 @@ export function buildRecordCommand(s: RecordSettings): CommandResult {
 
   if (s.captureAudio) {
     if (s.platform === "darwin") {
-      args.push("-f", "avfoundation", "-i", `:${s.audioDevice}`);
+      args.push("-f", "avfoundation", "-i", s.audioDevice);
       tokens.push(
         { type: "flag", text: "-f" },
         { type: "val", text: "avfoundation" },
         { type: "flag", text: "-i" },
-        { type: "file", text: `:${s.audioDevice}` },
+        { type: "file", text: s.audioDevice },
       );
     } else if (s.platform === "windows") {
       args.push("-f", "dshow", "-i", `audio=${s.audioDevice}`);
@@ -1159,8 +1158,9 @@ export function buildStreamCommand(s: StreamSettings): CommandResult {
 function protocolFormat(p: StreamProtocol): string {
   switch (p) {
     case "rtmp":
-    case "rtsp":
       return "flv";
+    case "rtsp":
+      return "rtsp";
     case "hls":
       return "hls";
     case "srt":

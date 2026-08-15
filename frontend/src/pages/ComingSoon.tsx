@@ -27,8 +27,8 @@ export function ComingSoonPage() {
         <p className="ffs-display text-lg font-semibold">{pick(t.comingSoon, lang)}</p>
         <p className="text-sm text-muted-foreground max-w-md">
           {lang === "zh"
-            ? "该模块正在开发中，敬请期待。当前已实现：格式转换、视频剪辑、滤镜效果。"
-            : "This module is under development. Currently available: Format Convert, Cut & Trim, Video Filters."}
+            ? "该页面为占位页。所有功能模块均已实现，请从左侧导航选择。"
+            : "This is a placeholder page. All modules are implemented — select from the sidebar."}
         </p>
       </div>
       <div className="shrink-0 bg-console border-t border-console-border h-9 flex items-center px-4">

@@ -23,3 +23,12 @@ export interface ProgressEvent {
   message: string;
   outputPath: string;
 }
+
+export interface UpdateProgress {
+  stage: string;
+  percent: number;
+  downloadedBytes: number;
+  totalBytes: number;
+  speedBytesPerSec: number;
+  message: string;
+}

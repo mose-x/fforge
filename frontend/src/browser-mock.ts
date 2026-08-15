@@ -214,6 +214,9 @@ if (!w.go || !w.runtime) {
               "https://github.com/mose-x/fforge/releases/download/v1.1.0/fforge-1.1.0-macos-arm64.bin",
             filename: "fforge-1.1.0-macos-arm64.bin",
             sha256: "abc123",
+            manualInstall: false,
+            installerUrl: "",
+            installerFilename: "",
           }),
         DownloadUpdate: (_url: string, _sha: string) => {
           simulateUpdateProgress();
