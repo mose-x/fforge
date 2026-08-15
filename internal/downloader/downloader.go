@@ -261,6 +261,9 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 	}
 
 	// Concurrent download
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	var totalDownloaded atomic.Int64
 	var wg sync.WaitGroup
 	errCh := make(chan error, threads)
@@ -290,6 +293,7 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 
 			req, err := http.NewRequestWithContext(ctx, "GET", downloadURL, nil)
 			if err != nil {
+				cancel()
 				errCh <- err
 				return
 			}
@@ -297,18 +301,21 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 
 			resp, err := client.Do(req)
 			if err != nil {
+				cancel()
 				errCh <- err
 				return
 			}
 			defer resp.Body.Close()
 
 			if resp.StatusCode != http.StatusPartialContent && resp.StatusCode != http.StatusOK {
+				cancel()
 				errCh <- fmt.Errorf("segmented download failed, HTTP status code: %d", resp.StatusCode)
 				return
 			}
 
 			f, err := os.OpenFile(destPath, os.O_WRONLY, 0)
 			if err != nil {
+				cancel()
 				errCh <- err
 				return
 			}
@@ -321,6 +328,7 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 				if n > 0 {
 					_, writeErr := f.WriteAt(buf[:n], offset)
 					if writeErr != nil {
+						cancel()
 						errCh <- writeErr
 						return
 					}
@@ -331,6 +339,7 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 					if readErr == io.EOF {
 						break
 					}
+					cancel()
 					errCh <- readErr
 					return
 				}
@@ -341,9 +350,10 @@ func (d *Downloader) downloadMultiThread(ctx context.Context, client *http.Clien
 	wg.Wait()
 	stopProgress.Store(true)
 
-	// Check errors
+	// Check errors — clean up partial file on failure
 	select {
 	case err := <-errCh:
+		os.Remove(destPath)
 		return err
 	default:
 	}
