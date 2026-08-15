@@ -49,13 +49,8 @@ export function StreamPage() {
   const canStart = settings.isLive ? urlValid : urlValid && inputPath.length > 0;
 
   const handleRun = () => {
-    run(
-      command,
-      inputName,
-      settings.isLive ? ":0.0" : inputPath,
-      settings.url + (settings.key ? "/" + settings.key : ""),
-      0,
-    );
+    const streamUrl = settings.url + (settings.key ? "/" + settings.key : "");
+    run(command, inputName, settings.isLive ? ":0.0" : inputPath, streamUrl, 0, streamUrl);
   };
 
   const primary: PageAction = {

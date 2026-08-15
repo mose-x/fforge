@@ -40,3 +40,5 @@ export function SelectMediaFiles():Promise<Array<string>>;
 export function SelectOutputPath(arg1:string):Promise<string>;
 
 export function SelectSubtitleFile():Promise<string>;
+
+export function WriteConcatList(arg1:Array<string>):Promise<string>;

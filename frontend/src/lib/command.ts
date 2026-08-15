@@ -881,7 +881,7 @@ export type RecordSource = "screen" | "window" | "camera";
 
 export interface RecordSettings {
   source: RecordSource;
-  platform: "darwin" | "win32" | "linux";
+  platform: "darwin" | "windows" | "linux";
   region: string; // e.g. "1920x1080" or "" for full
   offset: string; // e.g. "+0,0"
   fps: number;
@@ -909,10 +909,10 @@ function recordInput(r: RecordSettings): { args: string[]; tokens: Token[]; desc
   let desc = "";
   const fmt = (() => {
     if (r.source === "camera")
-      return { darwin: "avfoundation", win32: "dshow", linux: "v4l2" }[r.platform];
+      return { darwin: "avfoundation", windows: "dshow", linux: "v4l2" }[r.platform];
     if (r.source === "window")
-      return { darwin: "avfoundation", win32: "gdigrab", linux: "x11grab" }[r.platform];
-    return { darwin: "avfoundation", win32: "gdigrab", linux: "x11grab" }[r.platform];
+      return { darwin: "avfoundation", windows: "gdigrab", linux: "x11grab" }[r.platform];
+    return { darwin: "avfoundation", windows: "gdigrab", linux: "x11grab" }[r.platform];
   })();
   args.push("-f", fmt, "-framerate", String(r.fps));
   tokens.push(
@@ -948,12 +948,12 @@ function recordInput(r: RecordSettings): { args: string[]; tokens: Token[]; desc
 
 export function platformVideoInput(p: string): string {
   if (p === "darwin") return "1:";
-  if (p === "win32") return "desktop";
+  if (p === "windows") return "desktop";
   return ":0.0";
 }
 export function platformCameraInput(p: string): string {
   if (p === "darwin") return "0:";
-  if (p === "win32") return "video=Integrated Camera";
+  if (p === "windows") return "video=Integrated Camera";
   return "/dev/video0";
 }
 
@@ -976,7 +976,7 @@ export function buildRecordCommand(s: RecordSettings): CommandResult {
         { type: "flag", text: "-i" },
         { type: "file", text: `:${s.audioDevice}` },
       );
-    } else if (s.platform === "win32") {
+    } else if (s.platform === "windows") {
       args.push("-f", "dshow", "-i", `audio=${s.audioDevice}`);
       tokens.push(
         { type: "flag", text: "-f" },
@@ -1021,10 +1021,9 @@ export function buildRecordCommand(s: RecordSettings): CommandResult {
     );
     breakdown.push({ flag: "-c:a aac -b:a 128k", desc: "AAC 音频 / AAC audio" });
   }
-  // use q instead of overwrite since recording is long running
-  args.push("-q", s.outputName);
-  tokens.push({ type: "flag", text: "-q" }, { type: "file", text: s.outputName });
-  breakdown.push({ flag: s.outputName, desc: "输出文件 / Output (press 'q' to stop)" });
+  args.push("-y", s.outputName);
+  tokens.push({ type: "flag", text: "-y" }, { type: "file", text: s.outputName });
+  breakdown.push({ flag: s.outputName, desc: "输出文件 / Output file" });
 
   return { args, tokens, breakdown, sizeRatio: 0.5, estSec: 60 };
 }

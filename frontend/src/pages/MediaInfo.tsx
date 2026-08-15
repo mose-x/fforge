@@ -70,7 +70,7 @@ interface ProbeMediaExtended {
   format?: ProbeFormat;
   streams?: ProbeStream[];
   chapters?: ProbeChapter[];
-  RawJSON?: string;
+  rawJson?: string;
 }
 
 function buildFfprobeCommand(inputName: string): CommandResult {
@@ -150,7 +150,7 @@ export function MediaInfoPage() {
   };
 
   const handleExportJSON = async () => {
-    const raw = extendedInfo?.RawJSON || "";
+    const raw = extendedInfo?.rawJson || "";
     if (!raw) {
       toast(lang === "zh" ? "暂无 JSON 数据" : "No JSON data available", "error");
       return;
@@ -174,7 +174,7 @@ export function MediaInfoPage() {
   const audioStreams = streams.filter((s) => s.codec_type === "audio");
   const subtitleStreams = streams.filter((s) => s.codec_type === "subtitle");
   const chapters = extendedInfo?.chapters || [];
-  const rawJSON = extendedInfo?.RawJSON || "";
+  const rawJSON = extendedInfo?.rawJson || "";
 
   return (
     <WorkArea

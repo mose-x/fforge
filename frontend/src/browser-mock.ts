@@ -80,9 +80,9 @@ if (!w.go || !w.runtime) {
   };
 
   const FAKE_DEVICES = [
-    { kind: "screen", name: "0", desc: "Capture screen 0 (Desktop)", default: true },
+    { kind: "video", name: "0", desc: "Capture screen 0 (Desktop)", default: true },
     { kind: "audio", name: "default", desc: "Default audio input", default: true },
-    { kind: "video", name: "FaceTime HD Camera", desc: "Built-in camera", default: true },
+    { kind: "video", name: "FaceTime HD Camera", desc: "Built-in camera", default: false },
   ];
 
   const listeners: Record<string, ((...args: any[]) => void)[]> = {};
@@ -117,6 +117,7 @@ if (!w.go || !w.runtime) {
     BrowserOpenURL(url: string) {
       window.open(url, "_blank");
     },
+    Environment: () => Promise.resolve({ buildType: "dev", platform: "darwin", arch: "arm64" }),
   };
   w.runtime = runtime;
 
@@ -221,6 +222,7 @@ if (!w.go || !w.runtime) {
           console.info("[browser-mock] RollbackUpdate would restore previous version");
           return Promise.resolve();
         },
+        WriteConcatList: (_paths: string[]) => Promise.resolve("/tmp/fforge-concat-mock.txt"),
       },
     },
   };
