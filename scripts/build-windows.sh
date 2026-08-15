@@ -52,7 +52,7 @@ case "$ARCH" in
   amd64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip" ;;
   arm64) FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-winarm64-gpl.zip" ;;
 esac
-curl -L "$FFMPEG_URL" -o /tmp/ffmpeg.zip
+curl -fL "$FFMPEG_URL" -o /tmp/ffmpeg.zip || { echo "ERROR: failed to download FFmpeg" >&2; exit 1; }
 mkdir -p /tmp/ffmpeg_extract
 unzip -o /tmp/ffmpeg.zip -d /tmp/ffmpeg_extract >/dev/null
 FFMPEG_BIN=$(find /tmp/ffmpeg_extract -name ffmpeg.exe -path '*/bin/*' | head -1)
