@@ -30,6 +30,22 @@ esac
 jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
 echo "about.json version bumped to $VERSION"
 
+# --- Bump OS-level version metadata so .exe file properties show the correct
+# version in Explorer (Right-click -> Properties -> Details). go-winres reads
+# winres/winres.json to embed the version resource; build/windows/info.json is
+# Wails' own version info.
+jq --arg v4 "${VERSION}.0" --arg v3 "${VERSION}" \
+  '.RT_VERSION["#1"]["0000"].fixed.file_version = $v4 |
+   .RT_VERSION["#1"]["0000"].fixed.product_version = $v4 |
+   .RT_VERSION["#1"]["0000"].info["0409"].FileVersion = $v4 |
+   .RT_VERSION["#1"]["0000"].info["0409"].ProductVersion = $v3' \
+  winres/winres.json > winres/winres.json.tmp && mv winres/winres.json.tmp winres/winres.json
+jq --arg v4 "${VERSION}.0" --arg v3 "${VERSION}" \
+  '.fixed.file_version = $v4 |
+   .info["0000"].ProductVersion = $v3' \
+  build/windows/info.json > build/windows/info.json.tmp && mv build/windows/info.json.tmp build/windows/info.json
+echo "Windows version metadata bumped to $VERSION"
+
 # --- Download static FFmpeg binaries (bundled into the NSIS installer; the bare
 # self-update .exe ships WITHOUT ffmpeg so ApplyUpdate swaps only the app).
 case "$ARCH" in
