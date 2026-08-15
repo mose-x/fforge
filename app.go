@@ -398,15 +398,17 @@ func (a *App) RunFFmpeg(req RunRequest) error {
 
 func parseProgress(tail string, duration float64) ProgressEvent {
 	ev := ProgressEvent{}
-	if m := frameRe.FindStringSubmatch(tail); len(m) > 1 {
+	if matches := frameRe.FindAllStringSubmatch(tail, -1); len(matches) > 0 {
+		m := matches[len(matches)-1]
 		if f, err := strconv.Atoi(m[1]); err == nil {
 			ev.Frame = f
 		}
 	}
-	if m := speedRe.FindStringSubmatch(tail); len(m) > 1 {
-		ev.Speed = m[1]
+	if matches := speedRe.FindAllStringSubmatch(tail, -1); len(matches) > 0 {
+		ev.Speed = matches[len(matches)-1][1]
 	}
-	if m := timeRe.FindStringSubmatch(tail); len(m) >= 4 {
+	if matches := timeRe.FindAllStringSubmatch(tail, -1); len(matches) > 0 {
+		m := matches[len(matches)-1]
 		h, _ := strconv.Atoi(m[1])
 		min, _ := strconv.Atoi(m[2])
 		sec, _ := strconv.ParseFloat(m[3], 64)

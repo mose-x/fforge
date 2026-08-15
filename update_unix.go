@@ -5,7 +5,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -21,6 +23,38 @@ func backupPath(currentExe string) string {
 
 func shellQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// relaunchCommand returns the shell command to relaunch the app after an
+// update or rollback. On macOS, if the executable is inside an .app bundle,
+// we use `open` on the bundle so Launch Services (Dock, menu bar) works.
+// On Linux (or a bare macOS binary without a bundle), use nohup.
+func relaunchCommand(currentExe string) string {
+	exeQ := shellQuote(currentExe)
+	if runtime.GOOS == "darwin" {
+		appBundle := filepath.Dir(filepath.Dir(filepath.Dir(currentExe)))
+		if strings.HasSuffix(appBundle, ".app") {
+			return fmt.Sprintf("open %s", shellQuote(appBundle))
+		}
+	}
+	return fmt.Sprintf("nohup %s > /dev/null 2>&1 &", exeQ)
+}
+
+// launchUpdateScript starts the update/rollback shell script. On Linux, if
+// the binary lives in a system directory (e.g. /usr/bin), pkexec is used to
+// elevate. On macOS, /Applications is user-writable so no elevation is needed.
+func launchUpdateScript(scriptPath string, targetExe string) error {
+	if runtime.GOOS != "darwin" && !isWritable(targetExe) {
+		if _, err := exec.LookPath("pkexec"); err != nil {
+			return fmt.Errorf("update requires elevation but pkexec is not available; please update manually")
+		}
+		cmd := createCmd("pkexec", "/bin/sh", scriptPath)
+		cmd.Dir = os.TempDir()
+		return cmd.Start()
+	}
+	cmd := createCmd("/bin/sh", scriptPath)
+	cmd.Dir = os.TempDir()
+	return cmd.Start()
 }
 
 // ApplyUpdate launches a background /bin/sh script that waits for the
@@ -44,6 +78,7 @@ func (a *App) ApplyUpdate() error {
 	exeQ := shellQuote(currentExe)
 	bakQ := shellQuote(bak)
 	newQ := shellQuote(newExe)
+	relaunch := relaunchCommand(currentExe)
 	scriptContent := fmt.Sprintf(`#!/bin/sh
 echo "Waiting for application to close..."
 timeout=60
@@ -74,17 +109,15 @@ if ! mv -f %s %s 2>/dev/null; then
 fi
 chmod +x %s
 echo "Starting new version..."
-nohup %s > /dev/null 2>&1 &
+%s
 rm -f "$0"
-`, pid, exeQ, bakQ, exeQ, bakQ, exeQ, newQ, exeQ, newQ, exeQ, newQ, bakQ, exeQ, bakQ, exeQ, exeQ, exeQ)
+`, pid, exeQ, bakQ, exeQ, bakQ, exeQ, newQ, exeQ, newQ, exeQ, newQ, bakQ, exeQ, bakQ, exeQ, exeQ, relaunch)
 
 	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
 		return fmt.Errorf("failed to create update script: %w", err)
 	}
 
-	cmd := createCmd("/bin/sh", scriptPath)
-	cmd.Dir = os.TempDir()
-	if err := cmd.Start(); err != nil {
+	if err := launchUpdateScript(scriptPath, currentExe); err != nil {
 		return fmt.Errorf("failed to launch update script: %w", err)
 	}
 
@@ -107,6 +140,7 @@ func (a *App) RollbackUpdate() error {
 	pid := os.Getpid()
 	exeQ := shellQuote(currentExe)
 	bakQ := shellQuote(bak)
+	relaunch := relaunchCommand(currentExe)
 	scriptContent := fmt.Sprintf(`#!/bin/sh
 echo "Waiting for application to close..."
 timeout=60
@@ -128,17 +162,15 @@ if ! mv -f %s %s 2>/dev/null; then
 fi
 chmod +x %s
 echo "Starting restored version..."
-nohup %s > /dev/null 2>&1 &
+%s
 rm -f "$0"
-`, pid, bakQ, exeQ, bakQ, exeQ, bakQ, exeQ, exeQ)
+`, pid, bakQ, exeQ, bakQ, exeQ, bakQ, exeQ, relaunch)
 
 	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0755); err != nil {
 		return fmt.Errorf("failed to create rollback script: %w", err)
 	}
 
-	cmd := createCmd("/bin/sh", scriptPath)
-	cmd.Dir = os.TempDir()
-	if err := cmd.Start(); err != nil {
+	if err := launchUpdateScript(scriptPath, currentExe); err != nil {
 		return fmt.Errorf("failed to launch rollback script: %w", err)
 	}
 

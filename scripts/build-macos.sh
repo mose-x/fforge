@@ -31,16 +31,23 @@ APP="build/bin/fforge.app"
 jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
 echo "about.json version bumped to $VERSION"
 
-# --- Download static FFmpeg binaries (osxexperts.net; version-pinned, may drift).
-# Each zip contains a single binary (ffmpeg or ffprobe).
+# --- Bump Info.plist version so the .app bundle shows the correct version in
+# Finder/About. CFBundleShortVersionString is the user-facing version;
+# CFBundleVersion (build number) stays at 1 since we do one build per release.
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" build/darwin/Info.plist
+echo "Info.plist version bumped to $VERSION"
+
+# --- Download static FFmpeg binaries. osxexperts.net is the only known source
+# for pre-built macOS FFmpeg (both x64 and arm64). Use -f to fail on HTTP errors
+# (404, 500) so the build stops early instead of producing a broken zip.
 case "$ARCH" in
   amd64)
-    curl -L "https://www.osxexperts.net/ffmpeg80intel.zip" -o /tmp/ffmpeg.zip
-    curl -L "https://www.osxexperts.net/ffprobe80intel.zip" -o /tmp/ffprobe.zip
+    curl -fL "https://www.osxexperts.net/ffmpeg80intel.zip" -o /tmp/ffmpeg.zip || { echo "ERROR: failed to download ffmpeg (x64)" >&2; exit 1; }
+    curl -fL "https://www.osxexperts.net/ffprobe80intel.zip" -o /tmp/ffprobe.zip || { echo "ERROR: failed to download ffprobe (x64)" >&2; exit 1; }
     ;;
   arm64)
-    curl -L "https://www.osxexperts.net/ffmpeg81arm.zip" -o /tmp/ffmpeg.zip
-    curl -L "https://www.osxexperts.net/ffprobe81arm.zip" -o /tmp/ffprobe.zip
+    curl -fL "https://www.osxexperts.net/ffmpeg81arm.zip" -o /tmp/ffmpeg.zip || { echo "ERROR: failed to download ffmpeg (arm64)" >&2; exit 1; }
+    curl -fL "https://www.osxexperts.net/ffprobe81arm.zip" -o /tmp/ffprobe.zip || { echo "ERROR: failed to download ffprobe (arm64)" >&2; exit 1; }
     ;;
 esac
 mkdir -p /tmp/ffmpeg_extract
@@ -133,7 +140,7 @@ draw.text((cx, 320), 'Right-click the app  ->  Open  ->  "Open"',
 img.save(os.environ["BG_PATH"])
 PYEOF
 DMG_NAME="fforge-${VERSION}-macos-${ASSET_ARCH}.dmg"
-create-dmg \
+if ! create-dmg \
   --volname "fforge" \
   --background "$BG_PATH" \
   --window-pos 200 120 \
@@ -143,9 +150,9 @@ create-dmg \
   --icon "fforge.app" 180 200 \
   --no-internet-enable \
   "build/bin/${DMG_NAME}" \
-  "$APP" || true
-# create-dmg may fail on CI due to AppleScript; fallback to hdiutil.
-if [ ! -f "build/bin/${DMG_NAME}" ]; then
+  "$APP"; then
+  echo "create-dmg failed, falling back to hdiutil..."
+  rm -f "build/bin/${DMG_NAME}"
   hdiutil create -volname "fforge" -srcfolder "$APP" -ov -format UDZO "build/bin/${DMG_NAME}"
 fi
 

@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
@@ -16,6 +17,26 @@ func getUpdateFilePath() string {
 
 func backupPath(currentExe string) string {
 	return currentExe + ".bak"
+}
+
+// launchUpdateScript starts the update/rollback .bat script. If the target
+// binary is in a non-writable directory (e.g. C:\Program Files), the script
+// is launched elevated via PowerShell Start-Process -Verb RunAs (UAC prompt).
+func launchUpdateScript(scriptPath string, targetExe string) error {
+	if !isWritable(targetExe) {
+		psCmd := fmt.Sprintf(
+			"Start-Process -Verb RunAs -FilePath 'cmd.exe' -ArgumentList '/c','%s'",
+			scriptPath)
+		cmd := exec.Command("powershell", "-Command", psCmd)
+		cmd.Stdin = nil
+		cmd.Stdout = nil
+		cmd.Stderr = nil
+		cmd.Dir = os.TempDir()
+		return cmd.Start()
+	}
+	cmd := createCmd("cmd", "/C", scriptPath)
+	cmd.Dir = os.TempDir()
+	return cmd.Start()
 }
 
 // ApplyUpdate launches a .bat script that waits for the app to close,
@@ -57,21 +78,20 @@ if errorlevel 1 (
 echo Replacing application...
 copy /Y "%s" "%s" >NUL
 if errorlevel 1 (
-    echo Update failed!
+    echo Update failed! Restoring backup...
+    copy /Y "%s" "%s" >NUL
     exit /b 1
 )
 echo Starting new version...
 start "" "%s"
 del "%%~f0"
-`, pid, pid, currentExe, bak, newExe, currentExe, currentExe)
+`, pid, pid, currentExe, bak, newExe, currentExe, bak, currentExe, currentExe)
 
 	if err := os.WriteFile(scriptPath, []byte(scriptContent), 0644); err != nil {
 		return fmt.Errorf("failed to create update script: %w", err)
 	}
 
-	cmd := createCmd("cmd", "/C", scriptPath)
-	cmd.Dir = os.TempDir()
-	if err := cmd.Start(); err != nil {
+	if err := launchUpdateScript(scriptPath, currentExe); err != nil {
 		return fmt.Errorf("failed to launch update script: %w", err)
 	}
 
@@ -121,9 +141,7 @@ del "%%~f0"
 		return fmt.Errorf("failed to create rollback script: %w", err)
 	}
 
-	cmd := createCmd("cmd", "/C", scriptPath)
-	cmd.Dir = os.TempDir()
-	if err := cmd.Start(); err != nil {
+	if err := launchUpdateScript(scriptPath, currentExe); err != nil {
 		return fmt.Errorf("failed to launch rollback script: %w", err)
 	}
 
