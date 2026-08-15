@@ -77,3 +77,11 @@ export function SelectOutputPath(arg1) {
 export function SelectSubtitleFile() {
   return window['go']['main']['App']['SelectSubtitleFile']();
 }
+
+export function StopFFmpeg() {
+  return window['go']['main']['App']['StopFFmpeg']();
+}
+
+export function WriteConcatList(arg1) {
+  return window['go']['main']['App']['WriteConcatList'](arg1);
+}
