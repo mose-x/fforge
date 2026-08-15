@@ -21,15 +21,7 @@ import {
 } from "../lib/command";
 import { t, pick } from "../lib/i18n";
 import { useRunner } from "../lib/useRunner";
-
-type Platform = "darwin" | "win32" | "linux";
-
-function detectPlatform(): Platform {
-  if (typeof window !== "undefined" && (window as any).__TAURI__) {
-    return "linux";
-  }
-  return "linux";
-}
+import { Environment } from "../wailsjs/runtime/runtime";
 
 export function RecordPage() {
   const { lang, running: globalRunning } = useStore();
@@ -42,8 +34,25 @@ export function RecordPage() {
 
   const [settings, setSettings] = useState<RecordSettings>({
     ...DEFAULT_RECORD,
-    platform: detectPlatform(),
+    platform: "linux",
   });
+
+  useEffect(() => {
+    let mounted = true;
+    Environment()
+      .then((env) => {
+        if (mounted && env.platform) {
+          setSettings((prev) => ({
+            ...prev,
+            platform: env.platform as RecordSettings["platform"],
+          }));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -53,12 +62,12 @@ export function RecordPage() {
         if (w.go?.main?.App?.ListInputDevices) {
           const devices = await w.go.main.App.ListInputDevices();
           if (mounted && Array.isArray(devices)) {
-            setAudioDevices(devices.filter((d: any) => d.kind === "audioinput"));
+            setAudioDevices(devices.filter((d: any) => d.kind === "audio"));
           }
         }
       } catch {
         if (mounted) {
-          setAudioDevices([{ id: "default", name: "Default", kind: "audioinput" }]);
+          setAudioDevices([{ id: "default", name: "Default", kind: "audio" }]);
         }
       }
     };
@@ -80,13 +89,7 @@ export function RecordPage() {
   const handleToggleRecord = () => {
     if (!isRunning) {
       setRecording(true);
-      run(
-        command,
-        fakeInputName,
-        settings.platform === "linux" ? ":0.0" : "desktop",
-        settings.outputName,
-        0,
-      );
+      run(command, fakeInputName, fakeInputName, settings.outputName, 0);
     } else {
       setRecording(false);
     }

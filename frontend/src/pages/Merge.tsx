@@ -155,13 +155,28 @@ export function MergePage() {
 
       let realArgs: string[] = [];
       if (s.mode === "demuxer") {
+        const writeFn = (window as any).go?.main?.App?.WriteConcatList;
+        let concatListPath = "concat_list.txt";
+        if (typeof writeFn === "function") {
+          try {
+            concatListPath = await writeFn(s.files.map((f) => f.path));
+          } catch (e: any) {
+            toast(
+              (lang === "zh" ? "创建拼接列表失败" : "Failed to create concat list") +
+                ": " +
+                (e?.message || String(e)),
+              "error",
+            );
+            return;
+          }
+        }
         realArgs = [
           "-f",
           "concat",
           "-safe",
           "0",
           "-i",
-          "concat_list.txt",
+          concatListPath,
           "-c",
           "copy",
           "-y",

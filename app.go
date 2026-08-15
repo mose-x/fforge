@@ -610,6 +610,31 @@ func (a *App) ProbeMediaExtended(path string) (*ExtendedMediaInfo, error) {
 	return info, nil
 }
 
+// WriteConcatList writes a concat demuxer list file to a temp directory and
+// returns its path. Each entry is `file 'path'\n` (the format ffmpeg's concat
+// demuxer expects). Single quotes in paths are escaped as '\”.
+func (a *App) WriteConcatList(paths []string) (string, error) {
+	if len(paths) == 0 {
+		return "", fmt.Errorf("no files to concat")
+	}
+	var sb strings.Builder
+	for _, p := range paths {
+		escaped := strings.ReplaceAll(p, "'", "'\\''")
+		fmt.Fprintf(&sb, "file '%s'\n", escaped)
+	}
+	f, err := os.CreateTemp("", "fforge-concat-*.txt")
+	if err != nil {
+		return "", fmt.Errorf("failed to create concat list: %w", err)
+	}
+	if _, err := f.WriteString(sb.String()); err != nil {
+		f.Close()
+		os.Remove(f.Name())
+		return "", fmt.Errorf("failed to write concat list: %w", err)
+	}
+	f.Close()
+	return f.Name(), nil
+}
+
 // -----------------------------------------------------------------
 // Input device enumeration (for screen/camera/audio capture)
 // -----------------------------------------------------------------
