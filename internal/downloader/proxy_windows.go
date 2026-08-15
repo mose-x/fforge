@@ -3,6 +3,7 @@ package downloader
 import (
 	"net/http"
 	"net/url"
+	"strings"
 
 	"golang.org/x/sys/windows/registry"
 )
@@ -72,8 +73,8 @@ func applySystemProxy(transport *http.Transport) {
 
 func splitProxyParts(s string) []string {
 	var parts []string
-	for _, p := range splitBy(s, ';') {
-		p = trimSpace(p)
+	for _, p := range strings.Split(s, ";") {
+		p = strings.TrimSpace(p)
 		if p != "" {
 			parts = append(parts, p)
 		}
@@ -82,43 +83,9 @@ func splitProxyParts(s string) []string {
 }
 
 func parseProxyPart(s string) (scheme, addr string) {
-	idx := indexOf(s, '=')
+	idx := strings.IndexByte(s, '=')
 	if idx > 0 {
 		return s[:idx], s[idx+1:]
 	}
 	return "", s
-}
-
-func splitBy(s string, sep byte) []string {
-	var result []string
-	start := 0
-	for i := 0; i < len(s); i++ {
-		if s[i] == sep {
-			result = append(result, s[start:i])
-			start = i + 1
-		}
-	}
-	result = append(result, s[start:])
-	return result
-}
-
-func trimSpace(s string) string {
-	i := 0
-	for i < len(s) && (s[i] == ' ' || s[i] == '\t') {
-		i++
-	}
-	j := len(s)
-	for j > i && (s[j-1] == ' ' || s[j-1] == '\t') {
-		j--
-	}
-	return s[i:j]
-}
-
-func indexOf(s string, b byte) int {
-	for i := 0; i < len(s); i++ {
-		if s[i] == b {
-			return i
-		}
-	}
-	return -1
 }

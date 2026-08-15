@@ -132,7 +132,7 @@ func (a *App) CheckUpdate() (UpdateInfo, error) {
 	// about.json's updateUrl (which ends in /latest) so no config change is
 	// needed. per_page=30 is enough to find the newest stable even if a few
 	// rc/beta releases were published in between.
-	listURL := strings.TrimSuffix(a.appInfo.UpdateURL, "/latest")
+	listURL := strings.TrimSuffix(strings.TrimRight(a.appInfo.UpdateURL, "/"), "/latest")
 	req, err := http.NewRequest(http.MethodGet, listURL, nil)
 	if err != nil {
 		return UpdateInfo{}, fmt.Errorf("build request: %w", err)
