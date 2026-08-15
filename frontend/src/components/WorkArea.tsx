@@ -1,8 +1,7 @@
 import React from "react";
-import { Play } from "lucide-react";
 import { useStore } from "../store/useStore";
 import { CommandConsole } from "./CommandConsole";
-import { ButtonPrimary, ButtonSecondary } from "./ui";
+import { ButtonPrimary } from "./ui";
 import type { CommandResult } from "../lib/command";
 import type { Str } from "../lib/i18n";
 import { pick } from "../lib/i18n";
@@ -17,7 +16,6 @@ export interface PageAction {
 export function WorkArea({
   breadcrumb,
   title,
-  previewLabel,
   primary,
   children,
   command,
@@ -26,7 +24,7 @@ export function WorkArea({
 }: {
   breadcrumb: Str;
   title: Str;
-  previewLabel: string;
+  previewLabel?: string;
   primary: PageAction;
   children: React.ReactNode;
   command: CommandResult;
@@ -43,9 +41,6 @@ export function WorkArea({
           <span className="ffs-display font-semibold text-lg truncate">{pick(title, lang)}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <ButtonSecondary icon={<Play className="w-4 h-4" />} disabled={primary.disabled}>
-            {previewLabel}
-          </ButtonSecondary>
           <ButtonPrimary icon={primary.icon} onClick={primary.onClick} disabled={primary.disabled}>
             {primary.label}
           </ButtonPrimary>

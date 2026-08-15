@@ -4,7 +4,7 @@ import { t, pick } from "../lib/i18n";
 import { copyText, fmtSize, estTimeLabel } from "../lib/format";
 import type { CommandResult } from "../lib/command";
 import { OpenInFolder } from "../wailsjs/go/main/App";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export function CommandConsole({
   command,
@@ -18,7 +18,7 @@ export function CommandConsole({
   const { lang, consoleCollapsed, toggleConsole, running, progress, toast } = useStore();
   const [copied, setCopied] = useState(false);
 
-  const cmdString = command.args.join(" ");
+  const cmdString = useMemo(() => command.args.join(" "), [command.args]);
   const estOut = inputSize > 0 ? fmtSize(inputSize * command.sizeRatio) : "—";
   const pct = running && progress ? Math.max(0, Math.min(100, progress.percent)) : 0;
   const statusLabel = running
@@ -144,7 +144,15 @@ export function CommandConsole({
               className="flex items-center gap-1 text-primary hover:opacity-80"
               onClick={() => {
                 if (onOpenFolder) onOpenFolder();
-                else OpenInFolder(progress.outputPath).catch(() => {});
+                else
+                  OpenInFolder(progress.outputPath).catch((e: any) =>
+                    toast(
+                      lang === "zh"
+                        ? "无法打开文件夹: " + (e?.message || String(e))
+                        : "Failed to open folder: " + (e?.message || String(e)),
+                      "error",
+                    ),
+                  );
               }}
             >
               <FolderOpen className="w-3.5 h-3.5" />

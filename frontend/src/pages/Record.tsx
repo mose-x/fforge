@@ -168,7 +168,16 @@ export function RecordPage() {
               <Badge>{`platform: ${settings.platform}`}</Badge>
               <ButtonSecondary
                 icon={<Info className="w-3.5 h-3.5" />}
-                onClick={() => setAudioDevices((prev) => (prev.length > 0 ? [] : prev))}
+                onClick={() => {
+                  const w = window as any;
+                  if (w.go?.main?.App?.ListInputDevices) {
+                    w.go.main.App.ListInputDevices()
+                      .then((devices: any[]) =>
+                        setAudioDevices(devices.filter((d: any) => d.kind === "audio")),
+                      )
+                      .catch(() => {});
+                  }
+                }}
               >
                 {pick({ zh: "刷新设备", en: "Refresh" }, lang)}
               </ButtonSecondary>

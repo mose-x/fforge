@@ -131,7 +131,10 @@ export const useStore = create<AppState>((set, get) => ({
     get().setTheme(get().theme === "dark" ? "light" : "dark");
   },
 
-  setLang: (lang) => set({ lang }),
+  setLang: (lang) => {
+    document.documentElement.lang = lang;
+    set({ lang });
+  },
   setPage: (page) => set({ page }),
   toggleConsole: () => set({ consoleCollapsed: !get().consoleCollapsed }),
   setEngine: (engine) => set({ engine }),

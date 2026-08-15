@@ -51,10 +51,14 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
   }
 
   const save = (next: SettingsState) => {
+    const prev = settings;
     setSettings(next);
     SaveSettings(next as unknown as config.AppSettings)
       .then(() => toast(pick(t.settingsSaved, lang), "success"))
-      .catch((e: unknown) => toast(e instanceof Error ? e.message : String(e), "error"));
+      .catch((e: unknown) => {
+        setSettings(prev);
+        toast(e instanceof Error ? e.message : String(e), "error");
+      });
   };
   const patchProxy = (p: Partial<ProxyState>) =>
     save({ ...settings, proxy: { ...settings.proxy, ...p } });

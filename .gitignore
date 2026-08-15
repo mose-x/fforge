@@ -1,7 +1,6 @@
 # build output
 build/bin/
 frontend/dist/
-frontend/wailsjsgen/
 frontend/tsconfig.tsbuildinfo
 frontend/package.json.md5
 *.exe

@@ -79,13 +79,10 @@ export function SubtitlesPage() {
 
   const pickSubtitleFile = async () => {
     try {
-      const path = await (window as any).go.main.App.SelectSubtitleFile();
+      const fn = (window as any).go?.main?.App?.SelectSubtitleFile;
+      const path = typeof fn === "function" ? await fn() : "";
       if (path) {
-        const parts = path.split(/[/\\]/);
-        const filename = parts[parts.length - 1] || path;
         set("subtitleFile", path);
-        setS((prev) => ({ ...prev, subtitleFile: path, inputName: prev.inputName }));
-        void filename;
       }
     } catch {
       /* cancelled */
@@ -107,7 +104,12 @@ export function SubtitlesPage() {
   const command = useMemo(() => buildSubtitleCommand(settings), [settings]);
   const inputSize = inputInfo?.sizeBytes || 0;
 
-  const primaryLabel = s.mode === "burn" ? pick(t.startBurn, lang) : pick(t.startExtract, lang);
+  const primaryLabel =
+    s.mode === "burn"
+      ? pick(t.startBurn, lang)
+      : s.mode === "add"
+        ? pick({ zh: "添加字幕", en: "Add subtitles" }, lang)
+        : pick(t.startExtract, lang);
 
   const primary: PageAction = {
     icon: <Captions className="w-4 h-4" />,

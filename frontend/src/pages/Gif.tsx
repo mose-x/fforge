@@ -201,10 +201,7 @@ export function GifPage() {
             </Field>
 
             <Field label={pick({ zh: "输出文件", en: "Output" }, lang)}>
-              <Input
-                value={settings.outputName}
-                onChange={(v) => update("outputName", v || "output.gif")}
-              />
+              <Input value={settings.outputName} onChange={(v) => update("outputName", v)} />
             </Field>
           </div>
         </Card>

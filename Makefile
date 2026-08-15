@@ -46,4 +46,4 @@ generate:
 	$(WAILS) generate module
 
 clean:
-	rm -rf frontend/dist build/bin $(APP)
+	rm -rf frontend/dist build/bin $(APP) *.syso

@@ -214,7 +214,7 @@ export function VideoFiltersPage() {
               icon={<FileVideo className="w-4 h-4 text-primary shrink-0" />}
               title={pick(t.audioEncode, lang)}
             />
-            <Field label="-c:a" hint={audioCopy ? "copy" : "aac"}>
+            <Field label="-c:a" hint={audioCopy ? "copy" : "auto"}>
               <Toggle
                 checked={audioCopy}
                 onChange={setAudioCopy}
