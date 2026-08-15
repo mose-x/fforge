@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -26,6 +28,8 @@ type App struct {
 	appInfo    AppInfo
 	settings   *config.SettingsManager
 	downloader *downloader.Downloader
+	cmdMu      sync.Mutex
+	stopStdin  io.WriteCloser
 }
 
 // NewApp creates a new App instance.
@@ -352,9 +356,18 @@ func (a *App) RunFFmpeg(req RunRequest) error {
 	if err != nil {
 		return err
 	}
-	// -y overwrite, ensure stdin doesn't block
-	cmd.Stdin = strings.NewReader("")
+	// stdin pipe so StopFFmpeg can send 'q' to gracefully stop ffmpeg
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		return err
+	}
+	a.cmdMu.Lock()
+	a.stopStdin = stdin
+	a.cmdMu.Unlock()
 	if err := cmd.Start(); err != nil {
+		a.cmdMu.Lock()
+		a.stopStdin = nil
+		a.cmdMu.Unlock()
 		return err
 	}
 	runtime.EventsEmit(a.ctx, "ffmpeg:progress", ProgressEvent{Status: "running"})
@@ -380,6 +393,9 @@ func (a *App) RunFFmpeg(req RunRequest) error {
 		}
 	}()
 	err = cmd.Wait()
+	a.cmdMu.Lock()
+	a.stopStdin = nil
+	a.cmdMu.Unlock()
 	if err != nil {
 		runtime.EventsEmit(a.ctx, "ffmpeg:progress", ProgressEvent{
 			Status:     "error",
@@ -394,6 +410,20 @@ func (a *App) RunFFmpeg(req RunRequest) error {
 		OutputPath: req.OutputPath,
 	})
 	return nil
+}
+
+// StopFFmpeg sends 'q' to the running ffmpeg process's stdin, causing it to
+// gracefully stop (flush output and exit). Bound to the frontend (Record page
+// stop button). No-op if no ffmpeg process is running.
+func (a *App) StopFFmpeg() error {
+	a.cmdMu.Lock()
+	stdin := a.stopStdin
+	a.cmdMu.Unlock()
+	if stdin == nil {
+		return fmt.Errorf("no running ffmpeg process")
+	}
+	_, err := fmt.Fprint(stdin, "q")
+	return err
 }
 
 func parseProgress(tail string, duration float64) ProgressEvent {

@@ -3,3 +3,7 @@
 # on Git Bash. Force LF in the working tree on all platforms (overrides
 # core.autocrlf) so CI and local runs execute identical bytes.
 *.sh text eol=lf
+
+# Go files must use LF so gofmt -l doesn't false-positive on Windows
+# (core.autocrlf converts to CRLF in the working tree, but CI checks out LF).
+*.go text eol=lf

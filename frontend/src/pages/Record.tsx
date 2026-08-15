@@ -22,6 +22,7 @@ import {
 import { t, pick } from "../lib/i18n";
 import { useRunner } from "../lib/useRunner";
 import { Environment } from "../wailsjs/runtime/runtime";
+import { StopFFmpeg } from "../wailsjs/go/main/App";
 
 export function RecordPage() {
   const { lang, running: globalRunning } = useStore();
@@ -86,12 +87,14 @@ export function RecordPage() {
   const fakeInputName = platformVideoInput(settings.platform);
   const isRunning = recording || globalRunning;
 
-  const handleToggleRecord = () => {
+  const handleToggleRecord = async () => {
     if (!isRunning) {
       setRecording(true);
-      run(command, fakeInputName, fakeInputName, settings.outputName, 0);
+      const ok = await run(command, fakeInputName, fakeInputName, settings.outputName, 0);
+      if (!ok) setRecording(false);
     } else {
       setRecording(false);
+      StopFFmpeg().catch(() => {});
     }
   };
 

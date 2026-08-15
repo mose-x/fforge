@@ -45,9 +45,20 @@ export function useRunner() {
       }
 
       // substitute real paths into args (display names -> absolute paths)
+      // Use first-occurrence replacement so that when inputName === outputName
+      // (same filename for input and output), the first match becomes the input
+      // path and the second becomes the output path.
+      let inputReplaced = false;
+      let outputReplaced = false;
       const args = command.args.map((a) => {
-        if (a === inputName) return inputPath;
-        if (a === outputName) return outPath;
+        if (!inputReplaced && a === inputName) {
+          inputReplaced = true;
+          return inputPath;
+        }
+        if (!outputReplaced && a === outputName) {
+          outputReplaced = true;
+          return outPath;
+        }
         return a;
       });
       // drop the leading "ffmpeg" token (we call the binary directly)

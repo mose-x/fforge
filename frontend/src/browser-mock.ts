@@ -93,8 +93,13 @@ if (!w.go || !w.runtime) {
     },
     EventsOn(name: string, cb: (...args: any[]) => void) {
       (listeners[name] ||= []).push(cb);
+      return () => {
+        listeners[name] = (listeners[name] || []).filter((l) => l !== cb);
+      };
     },
-    EventsOff(_name: string) {},
+    EventsOff(name: string) {
+      delete listeners[name];
+    },
     EventsOffAll() {},
     EventsEmit(name: string, ...args: any[]) {
       (listeners[name] || []).forEach((cb) => cb(...args));
@@ -220,6 +225,10 @@ if (!w.go || !w.runtime) {
         },
         RollbackUpdate: () => {
           console.info("[browser-mock] RollbackUpdate would restore previous version");
+          return Promise.resolve();
+        },
+        StopFFmpeg: () => {
+          console.info("[browser-mock] StopFFmpeg would send 'q' to ffmpeg");
           return Promise.resolve();
         },
         WriteConcatList: (_paths: string[]) => Promise.resolve("/tmp/fforge-concat-mock.txt"),

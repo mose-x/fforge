@@ -97,6 +97,32 @@ func TestDownloadNon200(t *testing.T) {
 	}
 }
 
+// TestDownloadMultiThreadError verifies that when GET requests fail during a
+// multi-thread download (HEAD succeeds with range support, but segments return
+// 500), the partial file is cleaned up (M8 fix).
+func TestDownloadMultiThreadError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodHead {
+			w.Header().Set("Accept-Ranges", "bytes")
+			w.Header().Set("Content-Length", strconv.FormatInt(6*1024*1024, 10))
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	dest := filepath.Join(t.TempDir(), "err")
+	d := NewDownloader()
+	err := d.Download(context.Background(), srv.URL, dest, nil, ProxyConfig{}, 4)
+	if err == nil {
+		t.Fatal("expected error for 500 on multi-thread GET")
+	}
+	if _, statErr := os.Stat(dest); statErr == nil {
+		t.Error("partial file should be removed on download error")
+	}
+}
+
 // rangeHandler serves a static byte slice with Accept-Ranges + Content-Length
 // on HEAD and 206 Partial Content on a ranged GET, so the multi-thread path
 // actually runs.

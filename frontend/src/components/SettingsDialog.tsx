@@ -163,7 +163,12 @@ export function SettingsDialog({ onClose }: { onClose: () => void }) {
                       settings.proxy?.protocol === "socks5" ? "127.0.0.1:1080" : "127.0.0.1:7890"
                     }
                     value={settings.proxy?.url || ""}
-                    onChange={(e) => patchProxy({ url: e.target.value })}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        proxy: { ...settings.proxy, url: e.target.value },
+                      })
+                    }
                     onBlur={(e) => patchProxy({ url: e.target.value.trim() })}
                   />
                 </div>

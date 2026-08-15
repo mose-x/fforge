@@ -36,13 +36,14 @@ export function UpdateDialog({ onClose }: { onClose: () => void }) {
     GetAppInfo()
       .then((info) => setAppInfo(info))
       .catch(() => {});
-    EventsOn("update:progress", (p: any) => {
+    const off = EventsOn("update:progress", (p: any) => {
       setProgress({ percent: p.percent || 0, message: p.message || "" });
       if (p.stage === "done") {
         setStage("ready");
       }
     });
     doCheck();
+    return off;
   }, []);
 
   const doCheck = useCallback(async () => {
