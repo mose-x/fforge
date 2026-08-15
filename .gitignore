@@ -27,3 +27,6 @@ frontend/node_modules/
 
 # local tracking/notes (never commit)
 note/
+
+# generated Windows resource (go-winres make)
+*.syso

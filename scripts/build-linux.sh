@@ -36,15 +36,19 @@ else
 fi
 
 # --- System dependencies (idempotent; safe to re-run). Requires sudo.
-if ! pkg-config --exists webkit2gtk-4.0 2>/dev/null; then
-  echo "Installing system dependencies (requires sudo)..."
+# Install webkit2gtk if neither 4.0 nor 4.1 is present.
+if ! pkg-config --exists webkit2gtk-4.0 2>/dev/null && ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
+  echo "Installing webkit2gtk dependencies (requires sudo)..."
   sudo apt-get update
   sudo apt-get install -y \
     libgtk-3-dev libwebkit2gtk-4.0-dev \
-    libayatana-appindicator3-dev librsvg2-dev \
-    ruby ruby-dev python3-pil
+    libayatana-appindicator3-dev librsvg2-dev
 fi
+# ruby + python3-pil are needed for fpm and icon generation regardless of
+# webkit2gtk installation status — install them unconditionally if missing.
+command -v ruby >/dev/null 2>&1 || sudo apt-get install -y ruby ruby-dev
 command -v fpm >/dev/null 2>&1 || sudo gem install fpm
+python3 -c "from PIL import Image" 2>/dev/null || sudo apt-get install -y python3-pil
 
 # --- Bump about.json so the binary reports the correct version to CheckUpdate.
 jq --arg v "$VERSION" '.version = $v' about.json > about.json.tmp && mv about.json.tmp about.json
@@ -63,7 +67,12 @@ FFPROBE_BIN=$(find /tmp/ffmpeg_extract -type f -name ffprobe -path '*/bin/*' | h
 echo "FFmpeg: $(ls -la "$FFMPEG_BIN" "$FFPROBE_BIN")"
 
 # --- Build the bare binary (self-update asset; ships WITHOUT ffmpeg).
-wails build -platform "linux/$ARCH" -o fforge
+# Auto-detect webkit2gtk version: Wails v2 supports 4.1 via -tags webkit2_41.
+WAILS_TAGS=""
+if pkg-config --exists webkit2gtk-4.1 2>/dev/null && ! pkg-config --exists webkit2gtk-4.0 2>/dev/null; then
+  WAILS_TAGS="-tags webkit2_41"
+fi
+wails build $WAILS_TAGS -platform "linux/$ARCH" -o fforge
 if [ -f "build/bin/fforge-$ARCH" ] && [ ! -f "build/bin/fforge" ]; then
   mv "build/bin/fforge-$ARCH" "build/bin/fforge"
 fi
@@ -74,6 +83,9 @@ mv "build/bin/fforge" "build/bin/${ASSET_NAME}"
 # FFmpeg under /usr/lib/fforge so the app resolves them at runtime.
 DEB_NAME="fforge-${VERSION}-linux-${ASSET_ARCH}.deb"
 RPM_NAME="fforge-${VERSION}-linux-${ASSET_ARCH}.rpm"
+# Sanitize version for fpm: Debian uses ~ for pre-release suffixes, RPM rejects
+# hyphens in the version field. Replace '-' with '~' (e.g. 1.2.0-rc1 -> 1.2.0~rc1).
+FPM_VERSION="${VERSION/-/\~}"
 STAGING="$(mktemp -d)"
 mkdir -p "$STAGING/share/applications"
 mkdir -p "$STAGING/lib/fforge"
@@ -100,7 +112,7 @@ for sz in 16 32 48 64 128 256 512; do
 done
 
 fpm -s dir -t deb \
-  -n fforge -v "${VERSION}" -a "${DEB_ARCH}" \
+  -n fforge -v "${FPM_VERSION}" -a "${DEB_ARCH}" \
   --depends libgtk-3-0 \
   --depends libwebkit2gtk-4.0-37 \
   --depends libayatana-appindicator3-1 \
@@ -112,7 +124,7 @@ fpm -s dir -t deb \
   "$STAGING/lib/=/usr/lib/"
 
 fpm -s dir -t rpm \
-  -n fforge -v "${VERSION}" -a "${RPM_ARCH}" \
+  -n fforge -v "${FPM_VERSION}" -a "${RPM_ARCH}" \
   --depends gtk3 \
   --depends webkit2gtk3 \
   --depends libayatana-appindicator3 \
