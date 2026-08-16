@@ -40,6 +40,12 @@ Section "Install"
   WriteRegStr HKLM "${UNINST_KEY}" "Publisher" "${APP_PUBLISHER}"
   ; Persist the install location so the next upgrade's InstallDirRegKey reads it.
   WriteRegStr HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+
+  ; Refresh Windows icon cache so the new .exe icon shows immediately.
+  ; Without this, Explorer shows the stale cached icon from the previous install.
+  SetShellVarContext current
+  Delete "$LOCALAPPDATA\IconCache.db"
+  System::Call 'shell32::SHChangeNotify(i 0x08000000, i 0, i 0, i 0)'
 SectionEnd
 
 Section "Uninstall"
