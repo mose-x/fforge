@@ -62,6 +62,24 @@ cp "$FFMPEG_BIN" build/bin/ffmpeg.exe
 cp "$FFPROBE_BIN" build/bin/ffprobe.exe
 echo "FFmpeg downloaded: $(ls -la build/bin/ffmpeg.exe build/bin/ffprobe.exe)"
 
+# --- Generate .ico from appicon.png so changing the logo updates all platforms
+# automatically (same as macOS sips+iconutil and Linux PIL). Falls back to the
+# committed .ico files if Python/Pillow is unavailable (rare — CI always has it).
+PYTHON=$(command -v python3 2>/dev/null || command -v python 2>/dev/null || true)
+if [ -n "$PYTHON" ]; then
+  "$PYTHON" -m pip install --quiet Pillow 2>/dev/null || true
+  "$PYTHON" -c "
+from PIL import Image
+src = Image.open('build/appicon.png').convert('RGBA')
+sizes = [(16,16), (32,32), (48,48), (64,64), (128,128), (256,256)]
+src.save('build/windows/icon-white.ico', format='ICO', sizes=sizes)
+src.save('build/windows/icon.ico', format='ICO', sizes=sizes)
+print('Icons generated from appicon.png')
+" || echo "WARNING: Pillow not available, using committed .ico files"
+else
+  echo "WARNING: python not available, using committed .ico files"
+fi
+
 # --- Generate Windows resources (icon + version info) -> resource.syso, so the
 # Go linker embeds them into fforge.exe (icon shows in Explorer/taskbar).
 # go-winres reads winres/winres.json (RT_GROUP_ICON -> build/windows/icon.ico +
