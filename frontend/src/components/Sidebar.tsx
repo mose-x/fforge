@@ -60,7 +60,7 @@ function NavRow({ item }: { item: NavItem }) {
       <Icon className="w-[18px] h-[18px] shrink-0" />
       <div className="flex-1 flex flex-col min-w-0">
         <span className="truncate">{lang === "zh" ? item.zh : item.en}</span>
-        <span className="text-xs text-muted-foreground">{lang === "en" ? item.zh : item.en}</span>
+        {lang === "zh" && <span className="text-xs text-muted-foreground">{item.en}</span>}
       </div>
     </a>
   );

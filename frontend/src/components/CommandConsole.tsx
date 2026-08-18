@@ -40,7 +40,7 @@ export function CommandConsole({
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } else {
-      toast(lang === "zh" ? "复制失败" : "Copy failed", "error");
+      toast(lang === "zh" ? "复制失败 / Copy failed" : "Copy failed", "error");
     }
   };
 
@@ -148,7 +148,7 @@ export function CommandConsole({
                   OpenInFolder(progress.outputPath).catch((e: any) =>
                     toast(
                       lang === "zh"
-                        ? "无法打开文件夹: " + (e?.message || String(e))
+                        ? "无法打开文件夹 / Failed to open folder: " + (e?.message || String(e))
                         : "Failed to open folder: " + (e?.message || String(e)),
                       "error",
                     ),
@@ -166,12 +166,16 @@ export function CommandConsole({
 }
 
 function BreakdownRow({ flag, desc }: { flag: string; desc: string }) {
+  const { lang } = useStore();
+  // desc strings are "中文 / English"; English mode shows only the English part.
+  const parts = desc.split(" / ");
+  const text = lang === "en" ? parts[1] || parts[0] : desc;
   // Decide token color by simple heuristic
   const isFile = /\.(mp4|mkv|mov|webm|avi|ts|mp3|aac|wav|m4a|flac)$/i.test(flag);
   return (
     <>
       <span className={isFile ? "ffs-tok-file" : "ffs-tok-flag"}>{flag}</span>
-      <span className="opacity-80">{desc}</span>
+      <span className="opacity-80">{text}</span>
     </>
   );
 }

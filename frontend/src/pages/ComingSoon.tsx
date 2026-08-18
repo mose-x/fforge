@@ -27,7 +27,7 @@ export function ComingSoonPage() {
         <p className="ffs-display text-lg font-semibold">{pick(t.comingSoon, lang)}</p>
         <p className="text-sm text-muted-foreground max-w-md">
           {lang === "zh"
-            ? "该页面为占位页。所有功能模块均已实现，请从左侧导航选择。"
+            ? "该页面为占位页。所有功能模块均已实现，请从左侧导航选择。 / This is a placeholder page. All modules are implemented — select from the sidebar."
             : "This is a placeholder page. All modules are implemented — select from the sidebar."}
         </p>
       </div>

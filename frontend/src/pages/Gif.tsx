@@ -200,7 +200,7 @@ export function GifPage() {
               </Select>
             </Field>
 
-            <Field label={pick({ zh: "输出文件", en: "Output" }, lang)}>
+            <Field label={pick({ zh: "输出文件 / Output", en: "Output" }, lang)}>
               <Input value={settings.outputName} onChange={(v) => update("outputName", v)} />
             </Field>
           </div>

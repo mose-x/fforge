@@ -108,7 +108,7 @@ export function SubtitlesPage() {
     s.mode === "burn"
       ? pick(t.startBurn, lang)
       : s.mode === "add"
-        ? pick({ zh: "添加字幕", en: "Add subtitles" }, lang)
+        ? pick({ zh: "添加字幕 / Add subtitles", en: "Add subtitles" }, lang)
         : pick(t.startExtract, lang);
 
   const primary: PageAction = {
@@ -189,7 +189,9 @@ export function SubtitlesPage() {
                     {subtitleFileName ? <Badge>{subtitleFileName}</Badge> : null}
                     {!subtitleFileName ? (
                       <span className="text-[11px] text-muted-foreground">
-                        {lang === "zh" ? "未选择字幕文件" : "No subtitle file selected"}
+                        {lang === "zh"
+                          ? "未选择字幕文件 / No subtitle file selected"
+                          : "No subtitle file selected"}
                       </span>
                     ) : null}
                   </div>
@@ -221,7 +223,7 @@ export function SubtitlesPage() {
                 <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-muted-foreground leading-relaxed">
                   {lang === "zh"
-                    ? "烧录模式需要视频重编码（-c:v libx264），输出画面中永久内嵌字幕。"
+                    ? "烧录模式需要视频重编码（-c:v libx264），输出画面中永久内嵌字幕。 / Burn-in mode requires video re-encode (-c:v libx264), subtitles are permanently embedded."
                     : "Burn-in mode requires video re-encode (-c:v libx264), subtitles are permanently embedded."}
                 </p>
               </div>
@@ -249,7 +251,7 @@ export function SubtitlesPage() {
                     {!subtitleFileName ? (
                       <span className="text-[11px] text-muted-foreground">
                         {lang === "zh"
-                          ? "（空 = 保留原字幕轨）"
+                          ? "（空 = 保留原字幕轨） / (empty = keep original streams)"
                           : "(empty = keep original streams)"}
                       </span>
                     ) : null}
@@ -304,7 +306,7 @@ export function SubtitlesPage() {
                 <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-muted-foreground leading-relaxed">
                   {lang === "zh"
-                    ? "提取模式将输出 .srt 字幕文件，无需重编码。"
+                    ? "提取模式将输出 .srt 字幕文件，无需重编码。 / Extract mode outputs a .srt subtitle file, no re-encode required."
                     : "Extract mode outputs a .srt subtitle file, no re-encode required."}
                 </p>
               </div>

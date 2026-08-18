@@ -108,7 +108,7 @@ export function AudioPage() {
       if (settings.endSec > totalSec) set("endSec", totalSec);
       if (settings.startSec >= settings.endSec) set("startSec", Math.max(0, settings.endSec - 1));
     }
-  }, [totalSec]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [totalSec]);
 
   const primaryLabel = s.mode === "volume" ? pick(t.start, lang) : pick(t.startExtract, lang);
 
@@ -329,7 +329,7 @@ export function AudioPage() {
                 <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <p className="text-muted-foreground leading-relaxed">
                   {lang === "zh"
-                    ? "音量模式会保留视频流直接复制（-c:v copy），不重编码画面，仅调整音频音量。"
+                    ? "音量模式会保留视频流直接复制（-c:v copy），不重编码画面，仅调整音频音量。 / Volume mode preserves video stream (-c:v copy), no video re-encode, only audio gain."
                     : "Volume mode preserves video stream (-c:v copy), no video re-encode, only audio gain."}
                 </p>
               </div>

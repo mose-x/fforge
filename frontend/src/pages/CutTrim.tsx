@@ -48,7 +48,7 @@ export function CutTrimPage() {
     if (startSec < 0) setStartSec(0);
     if (endSec > total) setEndSec(total);
     if (startSec >= endSec) setStartSec(Math.max(0, endSec - 1));
-  }, [total]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [total]);
 
   const primary: PageAction = {
     icon: <Scissors className="w-4 h-4" />,
@@ -158,7 +158,7 @@ export function CutTrimPage() {
                 ]}
               />
             </Field>
-            <Field label={pick({ zh: "输出文件", en: "Output" }, lang)}>
+            <Field label={pick({ zh: "输出文件 / Output", en: "Output" }, lang)}>
               <Input value={outputName} onChange={setOutputName} />
             </Field>
             <p className="text-[11px] text-muted-foreground ffs-mono">
