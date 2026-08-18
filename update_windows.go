@@ -28,6 +28,7 @@ func launchUpdateScript(scriptPath string, targetExe string) error {
 			"Start-Process -Verb RunAs -FilePath 'cmd.exe' -ArgumentList '/c','%s'",
 			scriptPath)
 		cmd := exec.Command("powershell", "-Command", psCmd)
+		hideWindow(cmd)
 		cmd.Stdin = nil
 		cmd.Stdout = nil
 		cmd.Stderr = nil

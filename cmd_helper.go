@@ -14,6 +14,7 @@ func createCmd(name string, args ...string) *exec.Cmd {
 	cmd.Stdin = nil
 	cmd.Stdout = nil
 	cmd.Stderr = nil
+	hideWindow(cmd)
 	return cmd
 }
 

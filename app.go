@@ -74,7 +74,9 @@ func (a *App) EngineStatus() EngineStatus {
 		FFprobePath:      a.probePath,
 	}
 	if a.ffmpegPath != "" {
-		out, err := exec.Command(a.ffmpegPath, "-version").Output()
+		cmd := exec.Command(a.ffmpegPath, "-version")
+		hideWindow(cmd)
+		out, err := cmd.Output()
 		if err == nil {
 			line := strings.SplitN(string(out), "\n", 2)[0]
 			fields := strings.Fields(line)
@@ -190,13 +192,19 @@ func (a *App) OpenInFolder(path string) error {
 	}
 	switch {
 	case runtime.Environment(a.ctx).Platform == "darwin":
-		return exec.Command("open", "-R", abs).Start()
+		cmd := exec.Command("open", "-R", abs)
+		hideWindow(cmd)
+		return cmd.Start()
 	case runtime.Environment(a.ctx).Platform == "windows":
-		return exec.Command("explorer", "/select,", abs).Start()
+		cmd := exec.Command("explorer", "/select,", abs)
+		hideWindow(cmd)
+		return cmd.Start()
 	default:
 		// linux / others
 		dir := filepath.Dir(abs)
-		return exec.Command("xdg-open", dir).Start()
+		cmd := exec.Command("xdg-open", dir)
+		hideWindow(cmd)
+		return cmd.Start()
 	}
 }
 
@@ -257,7 +265,9 @@ func (a *App) ProbeMedia(path string) (*MediaInfo, error) {
 		"-show_streams",
 		path,
 	}
-	out, err := exec.Command(a.probePath, args...).Output()
+	prbCmd := exec.Command(a.probePath, args...)
+	hideWindow(prbCmd)
+	out, err := prbCmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("ffprobe 失败: %v", err)
 	}
@@ -349,6 +359,7 @@ func (a *App) RunFFmpeg(req RunRequest) error {
 		return fmt.Errorf("app not started")
 	}
 	cmd := exec.Command(a.ffmpegPath, req.Args...)
+	hideWindow(cmd)
 	// ffmpeg writes progress to stderr
 	cmd.Stdout = nil
 	cmd.Stderr = nil
@@ -610,7 +621,9 @@ func (a *App) ProbeMediaExtended(path string) (*ExtendedMediaInfo, error) {
 		"-show_entries", "format_tags:stream_tags:stream_side_data_list:chapter_tags",
 		path,
 	}
-	out, err := exec.Command(a.probePath, args...).Output()
+	prbCmd := exec.Command(a.probePath, args...)
+	hideWindow(prbCmd)
+	out, err := prbCmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("ffprobe 失败: %v", err)
 	}
