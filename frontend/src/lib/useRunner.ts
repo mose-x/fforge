@@ -29,7 +29,12 @@ export function useRunner() {
         return false;
       }
       if (!inputPath) {
-        toast(lang === "zh" ? "请先选择输入文件" : "Please select an input file first", "error");
+        toast(
+          lang === "zh"
+            ? "请先选择输入文件 / Please select an input file first"
+            : "Please select an input file first",
+          "error",
+        );
         return false;
       }
 
@@ -86,7 +91,9 @@ export function useRunner() {
       } catch (e: any) {
         // error event already toasted via store listener; surface here too if needed
         toast(
-          (lang === "zh" ? "执行失败" : "Execution failed") + ": " + (e?.message || String(e)),
+          (lang === "zh" ? "执行失败 / Execution failed" : "Execution failed") +
+            ": " +
+            (e?.message || String(e)),
           "error",
         );
         return false;

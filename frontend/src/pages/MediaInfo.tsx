@@ -142,17 +142,23 @@ export function MediaInfoPage() {
 
   const handleReProbe = async () => {
     if (!inputPath) {
-      toast(lang === "zh" ? "请先选择文件" : "Please select a file first", "error");
+      toast(
+        lang === "zh" ? "请先选择文件 / Please select a file first" : "Please select a file first",
+        "error",
+      );
       return;
     }
     await fetchExtendedInfo(inputPath);
-    toast(lang === "zh" ? "已重新分析文件" : "File re-probed", "success");
+    toast(lang === "zh" ? "已重新分析文件 / File re-probed" : "File re-probed", "success");
   };
 
   const handleExportJSON = async () => {
     const raw = extendedInfo?.rawJson || "";
     if (!raw) {
-      toast(lang === "zh" ? "暂无 JSON 数据" : "No JSON data available", "error");
+      toast(
+        lang === "zh" ? "暂无 JSON 数据 / No JSON data available" : "No JSON data available",
+        "error",
+      );
       return;
     }
     const ok = await copyText(raw);
@@ -214,16 +220,16 @@ export function MediaInfoPage() {
                 hint="format"
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                <Field label={pick({ zh: "文件路径", en: "Path" }, lang)}>
+                <Field label={pick({ zh: "文件路径 / Path", en: "Path" }, lang)}>
                   <Input value={inputInfo.path} disabled />
                 </Field>
-                <Field label={pick({ zh: "文件名", en: "Filename" }, lang)}>
+                <Field label={pick({ zh: "文件名 / Filename", en: "Filename" }, lang)}>
                   <Input value={inputInfo.filename} disabled />
                 </Field>
-                <Field label={pick({ zh: "容器格式", en: "Container" }, lang)}>
+                <Field label={pick({ zh: "容器格式 / Container", en: "Container" }, lang)}>
                   <Input value={fmt?.format_name || inputInfo.container || "—"} disabled />
                 </Field>
-                <Field label={pick({ zh: "总时长", en: "Duration" }, lang)}>
+                <Field label={pick({ zh: "总时长 / Duration", en: "Duration" }, lang)}>
                   <Input
                     value={
                       fmt?.duration
@@ -235,13 +241,13 @@ export function MediaInfoPage() {
                     disabled
                   />
                 </Field>
-                <Field label={pick({ zh: "文件大小", en: "Size" }, lang)}>
+                <Field label={pick({ zh: "文件大小 / Size", en: "Size" }, lang)}>
                   <Input
                     value={fmt?.size ? fmtSize(parseInt(fmt.size)) : inputInfo.sizeHuman || "—"}
                     disabled
                   />
                 </Field>
-                <Field label={pick({ zh: "总码率", en: "Bitrate" }, lang)}>
+                <Field label={pick({ zh: "总码率 / Bitrate", en: "Bitrate" }, lang)}>
                   <Input
                     value={
                       fmt?.bit_rate
@@ -254,12 +260,12 @@ export function MediaInfoPage() {
                   />
                 </Field>
                 {fmt?.format_long_name && (
-                  <Field label={pick({ zh: "格式全称", en: "Format long" }, lang)}>
+                  <Field label={pick({ zh: "格式全称 / Format long", en: "Format long" }, lang)}>
                     <Input value={fmt.format_long_name} disabled />
                   </Field>
                 )}
                 {fmt?.nb_streams !== undefined && (
-                  <Field label={pick({ zh: "流数量", en: "Streams" }, lang)}>
+                  <Field label={pick({ zh: "流数量 / Streams", en: "Streams" }, lang)}>
                     <Input value={String(fmt.nb_streams)} disabled />
                   </Field>
                 )}
@@ -302,7 +308,9 @@ export function MediaInfoPage() {
                           />
                         </Field>
                         {s.pix_fmt && (
-                          <Field label={pick({ zh: "像素格式", en: "Pixel fmt" }, lang)}>
+                          <Field
+                            label={pick({ zh: "像素格式 / Pixel fmt", en: "Pixel fmt" }, lang)}
+                          >
                             <Input value={s.pix_fmt} disabled />
                           </Field>
                         )}
@@ -330,7 +338,9 @@ export function MediaInfoPage() {
                           s.color_transfer ||
                           s.color_primaries ||
                           s.color_range) && (
-                          <Field label={pick({ zh: "色彩信息", en: "Color info" }, lang)}>
+                          <Field
+                            label={pick({ zh: "色彩信息 / Color info", en: "Color info" }, lang)}
+                          >
                             <Input
                               value={
                                 [s.color_range, s.color_space, s.color_transfer, s.color_primaries]
@@ -401,7 +411,12 @@ export function MediaInfoPage() {
                           </Field>
                         )}
                         {s.channel_layout && (
-                          <Field label={pick({ zh: "声道布局", en: "Channel layout" }, lang)}>
+                          <Field
+                            label={pick(
+                              { zh: "声道布局 / Channel layout", en: "Channel layout" },
+                              lang,
+                            )}
+                          >
                             <Input value={s.channel_layout} disabled />
                           </Field>
                         )}
@@ -530,7 +545,7 @@ export function MediaInfoPage() {
           <Card>
             <div className="text-sm text-muted-foreground py-4 text-center">
               {lang === "zh"
-                ? "选择一个媒体文件以查看详细信息。"
+                ? "选择一个媒体文件以查看详细信息。 / Select a media file to view detailed information."
                 : "Select a media file to view detailed information."}
             </div>
           </Card>

@@ -133,7 +133,7 @@ export function VideoFiltersPage() {
             {filters.length === 0 && (
               <div className="text-xs text-muted-foreground py-3 text-center">
                 {lang === "zh"
-                  ? "点击下方滤镜添加到链中"
+                  ? "点击下方滤镜添加到链中 / Click a filter below to add it to the chain"
                   : "Click a filter below to add it to the chain"}
               </div>
             )}
@@ -224,7 +224,7 @@ export function VideoFiltersPage() {
                       ? "音频流复制 / stream copy"
                       : "stream copy"
                     : lang === "zh"
-                      ? "重编码 AAC"
+                      ? "重编码 AAC / re-encode AAC"
                       : "re-encode AAC"
                 }
               />

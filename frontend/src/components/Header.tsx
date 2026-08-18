@@ -1,13 +1,24 @@
 import { Moon, Sun, Settings, CircleHelp, Terminal, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useStore } from "../store/useStore";
 import { t, pick } from "../lib/i18n";
 import type { Lang } from "../lib/i18n";
+import { Environment } from "../wailsjs/runtime/runtime";
 
 export function Header() {
   const { theme, lang, toggleTheme, setLang, toast, setShowUpdate, setShowSettings } = useStore();
+  const [platform, setPlatform] = useState("");
+
+  useEffect(() => {
+    Environment()
+      .then((env) => setPlatform(env.platform))
+      .catch(() => {});
+  }, []);
 
   return (
-    <header className="h-14 shrink-0 border-b border-border px-5 flex items-center justify-between bg-card drag-region">
+    <header
+      className={`h-14 shrink-0 border-b border-border px-5 flex items-center justify-between bg-card drag-region ${platform === "darwin" ? "pl-[78px]" : ""}`}
+    >
       <div className="flex items-center gap-3 min-w-0 no-drag">
         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
           <Terminal className="w-[18px] h-[18px] text-primary-foreground" />
@@ -84,7 +95,7 @@ export function Header() {
           onClick={() =>
             toast(
               lang === "zh"
-                ? "FFmpeg Studio · 基于 Wails + React 构建"
+                ? "FFmpeg Studio · 基于 Wails + React 构建 / built with Wails + React"
                 : "FFmpeg Studio · built with Wails + React",
             )
           }

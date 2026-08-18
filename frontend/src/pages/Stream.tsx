@@ -83,8 +83,17 @@ export function StreamPage() {
               label={
                 <span className="text-sm">
                   {settings.isLive
-                    ? pick({ zh: "屏幕采集 (直播)", en: "Screen capture (Live)" }, lang)
-                    : pick({ zh: "文件输入 (点播)", en: "File input (VOD)" }, lang)}
+                    ? pick(
+                        {
+                          zh: "屏幕采集 (直播) / Screen capture (Live)",
+                          en: "Screen capture (Live)",
+                        },
+                        lang,
+                      )
+                    : pick(
+                        { zh: "文件输入 (点播) / File input (VOD)", en: "File input (VOD)" },
+                        lang,
+                      )}
                 </span>
               }
             />

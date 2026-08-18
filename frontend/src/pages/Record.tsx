@@ -179,7 +179,7 @@ export function RecordPage() {
                   }
                 }}
               >
-                {pick({ zh: "刷新设备", en: "Refresh" }, lang)}
+                {pick({ zh: "刷新设备 / Refresh", en: "Refresh" }, lang)}
               </ButtonSecondary>
             </div>
           </div>

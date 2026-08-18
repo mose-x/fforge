@@ -66,7 +66,7 @@ export function MergePage() {
       setS((prev) => ({ ...prev, files: [...prev.files, ...newEntries] }));
     } catch (e: any) {
       toast(
-        (lang === "zh" ? "选择文件失败" : "Failed to select files") +
+        (lang === "zh" ? "选择文件失败 / Failed to select files" : "Failed to select files") +
           ": " +
           (e?.message || String(e)),
         "error",
@@ -96,7 +96,9 @@ export function MergePage() {
       setS((prev) => ({ ...prev, files: [...prev.files, entry] }));
     } catch (e: any) {
       toast(
-        (lang === "zh" ? "添加文件失败" : "Failed to add file") + ": " + (e?.message || String(e)),
+        (lang === "zh" ? "添加文件失败 / Failed to add file" : "Failed to add file") +
+          ": " +
+          (e?.message || String(e)),
         "error",
       );
     }
@@ -133,7 +135,12 @@ export function MergePage() {
 
   const handleRunMerge = async () => {
     if (s.files.length < 2) {
-      toast(lang === "zh" ? "请至少选择 2 个文件" : "Please select at least 2 files", "error");
+      toast(
+        lang === "zh"
+          ? "请至少选择 2 个文件 / Please select at least 2 files"
+          : "Please select at least 2 files",
+        "error",
+      );
       return;
     }
     if (!engine?.ffmpegAvailable) {
@@ -162,7 +169,9 @@ export function MergePage() {
             concatListPath = await writeFn(s.files.map((f) => f.path));
           } catch (e: any) {
             toast(
-              (lang === "zh" ? "创建拼接列表失败" : "Failed to create concat list") +
+              (lang === "zh"
+                ? "创建拼接列表失败 / Failed to create concat list"
+                : "Failed to create concat list") +
                 ": " +
                 (e?.message || String(e)),
               "error",
@@ -235,13 +244,17 @@ export function MergePage() {
         }
       } catch (e: any) {
         toast(
-          (lang === "zh" ? "执行失败" : "Execution failed") + ": " + (e?.message || String(e)),
+          (lang === "zh" ? "执行失败 / Execution failed" : "Execution failed") +
+            ": " +
+            (e?.message || String(e)),
           "error",
         );
       }
     } catch (e: any) {
       toast(
-        (lang === "zh" ? "执行失败" : "Execution failed") + ": " + (e?.message || String(e)),
+        (lang === "zh" ? "执行失败 / Execution failed" : "Execution failed") +
+          ": " +
+          (e?.message || String(e)),
         "error",
       );
     }
@@ -268,7 +281,7 @@ export function MergePage() {
           <CardHeader
             icon={<FileVideo className="w-4 h-4 text-primary shrink-0" />}
             title={pick(t.mergeInputFiles, lang)}
-            hint={`${s.files.length} / ${pick({ zh: "已选文件", en: "files selected" }, lang)}`}
+            hint={`${s.files.length} / ${pick({ zh: "已选文件 / files selected", en: "files selected" }, lang)}`}
           />
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <ButtonSecondary icon={<Plus className="w-3.5 h-3.5" />} onClick={handleSelectFiles}>
@@ -278,7 +291,7 @@ export function MergePage() {
               icon={<FileVideo className="w-3.5 h-3.5" />}
               onClick={handleAddSingleFile}
             >
-              {pick({ zh: "添加单文件", en: "Add single file" }, lang)}
+              {pick({ zh: "添加单文件 / Add single file", en: "Add single file" }, lang)}
             </ButtonSecondary>
             <ButtonSecondary
               icon={<Trash2 className="w-3.5 h-3.5" />}
@@ -286,7 +299,7 @@ export function MergePage() {
               disabled={s.files.length === 0}
               className="ml-auto"
             >
-              {pick({ zh: "清空列表", en: "Clear list" }, lang)}
+              {pick({ zh: "清空列表 / Clear list", en: "Clear list" }, lang)}
             </ButtonSecondary>
           </div>
 
@@ -314,7 +327,7 @@ export function MergePage() {
                       onClick={() => handleMoveUp(idx)}
                       disabled={idx === 0}
                       className="h-7 w-7 rounded-md border border-border flex items-center justify-center hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      title={pick({ zh: "上移", en: "Move up" }, lang)}
+                      title={pick({ zh: "上移 / Move up", en: "Move up" }, lang)}
                     >
                       <ArrowUp className="w-3.5 h-3.5" />
                     </button>
@@ -322,7 +335,7 @@ export function MergePage() {
                       onClick={() => handleMoveDown(idx)}
                       disabled={idx === s.files.length - 1}
                       className="h-7 w-7 rounded-md border border-border flex items-center justify-center hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                      title={pick({ zh: "下移", en: "Move down" }, lang)}
+                      title={pick({ zh: "下移 / Move down", en: "Move down" }, lang)}
                     >
                       <ArrowDown className="w-3.5 h-3.5" />
                     </button>

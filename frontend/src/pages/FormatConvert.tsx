@@ -125,7 +125,7 @@ export function FormatConvertPage() {
               </div>
               <div className="flex flex-col gap-0.5 min-w-0">
                 <span className="text-[11px] text-muted-foreground">
-                  {pick({ zh: "大小", en: "Size" }, lang)}
+                  {pick({ zh: "大小 / Size", en: "Size" }, lang)}
                 </span>
                 <span className="ffs-mono text-xs truncate">{inputInfo.sizeHuman || "—"}</span>
               </div>
@@ -133,7 +133,7 @@ export function FormatConvertPage() {
           ) : (
             <div className="mb-3 text-xs text-muted-foreground">
               {lang === "zh"
-                ? "点击下方按钮选择一个媒体文件。"
+                ? "点击下方按钮选择一个媒体文件。 / Click the button below to select a media file."
                 : "Click the button below to select a media file."}
             </div>
           )}
